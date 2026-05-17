@@ -508,13 +508,12 @@
         lines.push(row.map(csvEscape).join(','));
       });
 
-      const csv = '﻿' + lines.join('
-');
+      const csv = '\\ufeff' + lines.join('\\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.downloOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+      a.download = `pet_summon_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
