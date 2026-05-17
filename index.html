@@ -28,7 +28,7 @@
     .wrap { max-width: 1180px; margin: 0 auto; }
     h1 { margin: 0 0 8px; font-size: 28px; }
     .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
-    .grid { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
     .card {
       background: rgba(17, 24, 39, 0.9);
       border: 1px solid var(--line);
@@ -86,7 +86,7 @@
     .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #020617; border: 1px solid var(--line); font-size: 12px; }
     .bonus { color: var(--ok); font-weight: 800; }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .summary { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) { .summary { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -149,7 +149,7 @@
                 <th>스탯 1</th>
                 <th>스탯 2</th>
                 <th>완성도</th>
-                <th>다음 Level/Count</th>
+                <th>현재 Level/Count</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -252,6 +252,8 @@
     }
 
     function summonOne(seed, level, count, levels, petCounts, mode, extraChancePct) {
+      const currentLevel = level;
+      const currentCount = count;
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
       let bonusRaw = null;
@@ -296,6 +298,8 @@
       return {
         seed,
         mode,
+        currentLevel,
+        currentCount,
         bonusTriggered,
         bonusRaw,
         chanceRaw,
@@ -436,19 +440,19 @@
         const stat2 = r.stats[1] ? `${r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : "-";
         const bonusText = r.mode === "normal"
           ? `${r.bonusTriggered ? "발동" : "-"}${r.bonusRaw !== null ? `<br><span class="code">raw ${r.bonusRaw}</span>` : ""}`
-          : "보너스 소환<br><span class='code'>체크 생략</span>";
+          : "<span class='code'>체크 생략</span>";
         return `
           <tr>
             <td>${idx + 1}</td>
             <td class="code">${hex64(r.seed)}</td>
-            <td>${r.mode === "normal" ? "기본" : "<span class='bonus'>보너스</span>"}</td>
+            <td>${r.mode === "normal" ? "기본" : "<span class='bonus'>추가</span>"}</td>
             <td>${bonusText}</td>
             <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity]}</b><br><span class="code">${r.rarityRaw}</span></td>
             <td>${r.rarity} #${r.petId}</td>
             <td>${stat1}</td>
             <td>${stat2}</td>
             <td>${r.perfection.toFixed(1)}%</td>
-            <td>Lv ${r.nextLevel + 1}<br>Count ${r.nextCount}</td>
+            <td>Lv ${r.currentLevel + 1}<br>Count ${r.currentCount}</td>
           </tr>
         `;
       }).join("");
