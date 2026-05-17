@@ -128,24 +128,6 @@
           <option value="bonusOnly">보너스 소환 결과열만 보기</option>
         </select>
 
-        <label>PetSummonConfig.json</label>
-        <textarea id="configJson" spellcheck="false">{
-  "Levels": [
-    { "SummonsRequired": 20, "Common": 1, "Rare": 0, "Epic": 0, "Legendary": 0, "Ultimate": 0, "Mythic": 0 }
-  ]
-}</textarea>
-        <div class="hint">펫 전용 확률표를 여기에 붙여넣으면 됩니다. 임시값은 Common 100%입니다.</div>
-
-        <label>등급별 펫 개수</label>
-        <textarea id="petCounts" spellcheck="false">{
-  "Common": 3,
-  "Rare": 4,
-  "Epic": 2,
-  "Legendary": 2,
-  "Ultimate": 2,
-  "Mythic": 2
-}</textarea>
-        <div class="hint">PetLibrary.json이 있으면 등급별 개수만 반영하면 됩니다. 이름까지 표시하려면 pet library 파싱을 추가하면 됩니다.</div>
 
         <button id="runBtn">계산하기</button>
         <button id="sampleBtn" class="secondary">현재 Seed에서 기본/보너스 1회 비교</button>
@@ -331,9 +313,16 @@
       try {
         const initialSeed = parseHex64(document.getElementById("seed").value, "Seed");
         const stateVal = parseHex64(document.getElementById("state").value, "Level/Count");
-        const levels = JSON.parse(document.getElementById("configJson").value).Levels;
-        const petCounts = JSON.parse(document.getElementById("petCounts").value);
-        if (!Array.isArray(levels) || levels.length === 0) throw new Error("PetSummonConfig.json의 Levels 배열이 필요합니다.");
+        const levels = [{ "SummonsRequired": 20, "Common": 1, "Rare": 0, "Epic": 0, "Legendary": 0, "Ultimate": 0, "Mythic": 0 }];
+        const petCounts = {
+          "Common": 3,
+          "Rare": 4,
+          "Epic": 2,
+          "Legendary": 2,
+          "Ultimate": 2,
+          "Mythic": 2
+        };
+        
 
         const extraChancePct = Number(document.getElementById("extraChance").value || 0);
         const batchSize = Number(document.getElementById("pullCount").value);
