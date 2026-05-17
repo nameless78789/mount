@@ -12,7 +12,6 @@
       --text: #e5e7eb;
       --muted: #9ca3af;
       --line: #374151;
-      --accent: #60a5fa;
       --danger: #f87171;
       --ok: #34d399;
     }
@@ -25,7 +24,7 @@
       min-height: 100vh;
       padding: 24px;
     }
-    .wrap { max-width: 1180px; margin: 0 auto; }
+    .wrap { max-width: 1280px; margin: 0 auto; }
     h1 { margin: 0 0 8px; font-size: 28px; }
     .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
@@ -37,7 +36,7 @@
       box-shadow: 0 14px 40px rgba(0,0,0,0.35);
     }
     label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, select, textarea, button {
+    input, select, button {
       width: 100%;
       border-radius: 10px;
       border: 1px solid var(--line);
@@ -47,7 +46,6 @@
       font-size: 14px;
       font-family: inherit;
     }
-    textarea { min-height: 160px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     button {
       margin-top: 14px;
       background: linear-gradient(135deg, #2563eb, #7c3aed);
@@ -55,8 +53,7 @@
       cursor: pointer;
       font-weight: 700;
     }
-    button.secondary { background: var(--panel2); border: 1px solid var(--line); }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .error { color: var(--danger); white-space: pre-wrap; margin-top: 12px; }
     .summary {
@@ -83,10 +80,16 @@
     .rarity-Legendary { color: #fcff5d; }
     .rarity-Ultimate { color: #ff5d5d; }
     .rarity-Mythic { color: #d55dff; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #020617; border: 1px solid var(--line); font-size: 12px; }
     .bonus { color: var(--ok); font-weight: 800; }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    @media (max-width: 900px) { .summary { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) {
+      .row { grid-template-columns: 1fr 1fr; }
+      .summary { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .row { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -94,36 +97,51 @@
     <h1>Pet Summon Predictor</h1>
     <div class="desc">
       Seed(HEX16)와 Level/Count(HEX16)를 입력하면 다음 펫 소환 결과를 예측합니다.
-      기본 소환은 보너스 판정 난수를 먼저 소비하고, 보너스 소환은 보너스 판정을 생략한 방식으로 계산합니다.
+      실제 진행 시뮬레이션에서는 1뽑, 15뽑, 50뽑을 몇 번 실행할지 선택할 수 있습니다.
     </div>
 
     <div class="grid">
       <section class="card">
-        <label>Pet Seed (HEX16)</label>
-        <input id="seed" value="" spellcheck="false" placeholder="예: 1234567812345678" />
-
-        <label>Level/Count State (HEX16)</label>
-        <input id="state" value="" spellcheck="false" placeholder="예: 1234567812345678" />
-        <div class="hint">상위 8자리 = Level, 하위 8자리 = Count. 화면 표시 레벨은 Level+1로 표시.</div>
-
         <div class="row">
+          <div>
+            <label>Pet Seed (HEX16)</label>
+            <input id="seed" value="" spellcheck="false" placeholder="예: 1234567812345678" />
+          </div>
+          <div>
+            <label>Level/Count State (HEX16)</label>
+            <input id="state" value="" spellcheck="false" placeholder="예: 1234567812345678" />
+          </div>
           <div>
             <label>Extra Summon Chance (%)</label>
             <input id="extraChance" type="number" step="0.01" value="0" />
           </div>
           <div>
-            <label>뽑기 횟수</label>
-            <input id="pullCount" type="number" min="1" max="999" step="1" value="1" />
+            <label>계산 모드</label>
+            <select id="mode">
+              <option value="simulate">실제 진행 시뮬레이션</option>
+              <option value="normalOnly">기본 소환 결과열만 보기</option>
+              <option value="bonusOnly">보너스 소환 결과열만 보기</option>
+            </select>
           </div>
         </div>
 
-        <label>계산 모드</label>
-        <select id="mode">
-          <option value="simulate">실제 진행 시뮬레이션: 기본 소환 + 보너스 발생 시 추가 소환</option>
-          <option value="normalOnly">기본 소환 결과열만 보기</option>
-          <option value="bonusOnly">보너스 소환 결과열만 보기</option>
-        </select>
-
+        <div class="row">
+          <div>
+            <label>뽑기 종류</label>
+            <select id="pullType">
+              <option value="1">1뽑</option>
+              <option value="15">15뽑</option>
+              <option value="50">50뽑</option>
+            </select>
+          </div>
+          <div>
+            <label>소환 실행 횟수</label>
+            <input id="pullRepeat" type="number" min="1" max="999" step="1" value="1" />
+          </div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="hint">예: 15뽑 × 3회 = 15뽑을 3번 실행합니다. Level/Count는 직전까지 누적된 값입니다.</div>
 
         <button id="runBtn">계산하기</button>
         <div id="error" class="error"></div>
@@ -137,13 +155,13 @@
               <tr>
                 <th>#</th>
                 <th>소비 Seed</th>
+                <th>현재 Level/Count</th>
                 <th>방식</th>
                 <th>보너스판정</th>
                 <th>등급</th>
                 <th>스탯 1</th>
                 <th>스탯 2</th>
                 <th>완성도</th>
-                <th>현재 Level/Count</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -152,8 +170,6 @@
       </section>
     </div>
   </div>
-
-  
 
   <script>
     const U64_MASK = (1n << 64n) - 1n;
@@ -183,7 +199,6 @@
       "Health": [0.01, 0.15]
     };
     const SUBSTATS_POOL = Object.keys(SUBSTATS_INFO);
-
     const SUBSTAT_KOR = {
       "Critical Chance": "치명타 확률",
       "Critical Damage": "치명타 피해",
@@ -213,9 +228,7 @@
         const rightShift = (xorshifted >>> rot) >>> 0;
         return (leftShift + rightShift) >>> 0;
       }
-      nextF64() {
-        return this.nextPcg32() / U32;
-      }
+      nextF64() { return this.nextPcg32() / U32; }
       nextInt(maxVal) {
         if (maxVal <= 0) return 0;
         const raw = this.nextPcg32();
@@ -227,10 +240,7 @@
         const low = BigInt(this.nextPcg32());
         return ((high << 32n) | low) & U64_MASK;
       }
-      nextGuid() {
-        this.nextULong();
-        this.nextULong();
-      }
+      nextGuid() { this.nextULong(); this.nextULong(); }
     }
 
     function parseHex64(s, fieldName) {
@@ -248,6 +258,34 @@
       return low + f64 * (up - low);
     }
 
+    async function loadConfigs() {
+      const eggResp = await fetch('./EggSummonConfig.json');
+      if (!eggResp.ok) throw new Error('EggSummonConfig.json 로드 실패');
+      const eggConfig = await eggResp.json();
+      if (!Array.isArray(eggConfig.Levels) || eggConfig.Levels.length === 0) throw new Error('EggSummonConfig.json의 Levels 배열이 비어 있습니다.');
+
+      let petCounts = { Common: 3, Rare: 4, Epic: 2, Legendary: 2, Ultimate: 2, Mythic: 2 };
+      try {
+        const petResp = await fetch('./PetLibrary.json');
+        if (petResp.ok) {
+          const petLib = await petResp.json();
+          const counts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0 };
+          const entries = Array.isArray(petLib) ? petLib.map((v, i) => [String(i), v]) : Object.entries(petLib);
+          for (const [key, pet] of entries) {
+            const petId = pet.PetId || pet.EggId || pet.MountId || pet.Id || {};
+            const rarity = petId.Rarity || pet.Rarity || pet.rarity;
+            if (counts[rarity] !== undefined) counts[rarity]++;
+          }
+          for (const rarity of RARITIES) {
+            if (counts[rarity] > 0) petCounts[rarity] = counts[rarity];
+          }
+        }
+      } catch (e) {
+        console.warn('PetLibrary.json 로드 실패. 기본 개수 사용');
+      }
+      return { levels: eggConfig.Levels, petCounts };
+    }
+
     function rollRarity(pcg, level, levels) {
       const lvlIdx = Math.min(level, levels.length - 1);
       const data = levels[lvlIdx];
@@ -256,32 +294,24 @@
       for (const rarity of RARITIES) {
         const chance = Number(data[rarity] || 0);
         acc += Math.round(chance * U32);
-        if (raw < acc) return { rarity, raw, lvlData: data };
+        if (raw < acc) return { rarity, lvlData: data };
       }
-      return { rarity: "Common", raw, lvlData: data };
+      return { rarity: "Common", lvlData: data };
     }
 
-    function summonOne(seed, level, count, levels, petCounts, petsByRarity, mode, extraChancePct) {
-      const currentLevel = level;
-      const currentCount = count + 1;
+    function summonOne(seed, level, count, levels, petCounts, mode, extraChancePct) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
-      let bonusRaw = null;
-      let chanceRaw = null;
 
       if (mode === "normal") {
-        bonusRaw = pcg.nextPcg32();
-        chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
+        const bonusRaw = pcg.nextPcg32();
+        const chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
         bonusTriggered = bonusRaw < chanceRaw;
       }
 
-      const { rarity, raw: rarityRaw, lvlData } = rollRarity(pcg, level, levels);
+      const { rarity, lvlData } = rollRarity(pcg, level, levels);
       const countInRarity = Number(petCounts[rarity] || 1);
-      const petId = pcg.nextInt(countInRarity);
-      const petInfo = petsByRarity?.[rarity]?.[petId];
-      const petName = petInfo?.name || `${rarity} #${petId}`;
-
-      // 게임 코드에서 GUID 생성이 스탯보다 먼저 난수 4회를 소비함.
+      pcg.nextInt(countInRarity);
       pcg.nextGuid();
 
       const numSubstats = ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
@@ -295,8 +325,7 @@
         availableStats.splice(statIdx, 1);
         const f64 = pcg.nextF64();
         f64Sum += f64;
-        const val = getSubstatValue(statName, f64) * 100;
-        stats.push({ name: statName, value: val, f64 });
+        stats.push({ name: statName, value: getSubstatValue(statName, f64) * 100, f64 });
       }
 
       let nextLevel = level;
@@ -307,9 +336,8 @@
         nextLevel += 1;
       }
 
-      let displayLevel = currentLevel;
-      let displayCount = currentCount;
-
+      let displayLevel = level;
+      let displayCount = count + 1;
       if (displayCount >= required) {
         displayCount -= required;
         displayLevel += 1;
@@ -321,12 +349,7 @@
         displayLevel,
         displayCount,
         bonusTriggered,
-        bonusRaw,
-        chanceRaw,
         rarity,
-        rarityRaw,
-        petId,
-        petName,
         stats,
         perfection: (f64Sum / numSubstats) * 100,
         nextLevel,
@@ -334,189 +357,106 @@
       };
     }
 
-    async function loadConfigs() {
-      const eggResp = await fetch('./EggSummonConfig.json');
-      if (!eggResp.ok) throw new Error('EggSummonConfig.json 로드 실패');
-      const eggConfig = await eggResp.json();
+    function consumePullBatch(batchSize, rows, state) {
+      let totalTargetPulls = batchSize;
+      let currentPullIdx = 0;
 
-      let petCounts = {
-        "Common": 3,
-        "Rare": 4,
-        "Epic": 2,
-        "Legendary": 2,
-        "Ultimate": 2,
-        "Mythic": 2
-      };
-      let petsByRarity = {
-        "Common": [],
-        "Rare": [],
-        "Epic": [],
-        "Legendary": [],
-        "Ultimate": [],
-        "Mythic": []
-      };
+      while (currentPullIdx < totalTargetPulls) {
+        const isBonusPull = currentPullIdx >= batchSize;
+        const mode = isBonusPull ? "bonus" : "normal";
+        const r = summonOne(state.currentSeed, state.level, state.count, state.levels, state.petCounts, mode, state.extraChancePct);
+        rows.push(r);
 
-      try {
-        const petResp = await fetch('./PetLibrary.json');
-        if (petResp.ok) {
-          const petLib = await petResp.json();
-          const counts = {
-            "Common": 0,
-            "Rare": 0,
-            "Epic": 0,
-            "Legendary": 0,
-            "Ultimate": 0,
-            "Mythic": 0
-          };
-          const grouped = {
-            "Common": [],
-            "Rare": [],
-            "Epic": [],
-            "Legendary": [],
-            "Ultimate": [],
-            "Mythic": []
-          };
-
-          const entries = Array.isArray(petLib)
-            ? petLib.map((value, index) => [String(index), value])
-            : Object.entries(petLib);
-
-          for (const [key, pet] of entries) {
-            const petId = pet.PetId || pet.EggId || pet.MountId || pet.Id || {};
-            const rarity = petId.Rarity || pet.Rarity || pet.rarity;
-            if (grouped[rarity] === undefined) continue;
-
-            const rawId = petId.Id ?? pet.Id ?? pet.id ?? counts[rarity];
-            let name = pet.Name || pet.name || pet.DisplayName || pet.displayName || pet.LocalizedName || pet.localizedName || "";
-            if (!name || name.startsWith('{')) {
-              name = `${RARITY_KOR[rarity] || rarity} #${rawId}`;
-            }
-            grouped[rarity].push({
-              id: Number(rawId),
-              name: String(name)
-            });
-            counts[rarity]++;
-          }
-
-          for (const rarity of RARITIES) {
-            grouped[rarity].sort((a, b) => a.id - b.id);
-          }
-
-          petCounts = counts;
-          petsByRarity = grouped;
+        if (!isBonusPull && r.bonusTriggered) {
+          totalTargetPulls += 1;
         }
-      } catch (e) {
-        console.warn('PetLibrary.json 로드 실패. 기본 개수 사용');
+
+        state.currentSeed = (state.currentSeed + 1n) & U64_MASK;
+        state.level = r.nextLevel;
+        state.count = r.nextCount;
+        currentPullIdx += 1;
       }
-
-      return {
-        levels: eggConfig.Levels || [],
-        petCounts,
-        petsByRarity
-      };
     }
+
     async function simulate() {
-      const errorEl = document.getElementById("error");
-      errorEl.textContent = "";
+      const errorEl = document.getElementById('error');
+      errorEl.textContent = '';
       try {
-        const { levels, petCounts, petsByRarity } = await loadConfigs();
+        const { levels, petCounts } = await loadConfigs();
+        const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
+        const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
+        const extraChancePct = Number(document.getElementById('extraChance').value || 0);
+        const batchSize = Number(document.getElementById('pullType').value);
+        let repeatCount = Number(document.getElementById('pullRepeat').value);
+        if (!Number.isInteger(repeatCount) || repeatCount < 1) repeatCount = 1;
+        if (repeatCount > 999) repeatCount = 999;
+        document.getElementById('pullRepeat').value = repeatCount;
+        const selectedMode = document.getElementById('mode').value;
 
-        const initialSeed = parseHex64(document.getElementById("seed").value, "Seed");
-        const stateVal = parseHex64(document.getElementById("state").value, "Level/Count");
-        
-        
-
-        const extraChancePct = Number(document.getElementById("extraChance").value || 0);
-        let batchSize = Number(document.getElementById("pullCount").value);
-        if (!Number.isInteger(batchSize) || batchSize < 1) batchSize = 1;
-        if (batchSize > 999) batchSize = 999;
-        document.getElementById("pullCount").value = batchSize;
-        const selectedMode = document.getElementById("mode").value;
-
-        let currentSeed = initialSeed;
-        let level = Number((stateVal >> 32n) & 0xFFFFFFFFn);
-        let count = Number(stateVal & 0xFFFFFFFFn);
-        const startLevel = level;
-        const startCount = count;
+        const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);
+        const startCount = Number(stateVal & 0xFFFFFFFFn);
         const rows = [];
+        const state = {
+          currentSeed: initialSeed,
+          level: startLevel,
+          count: startCount,
+          levels,
+          petCounts,
+          extraChancePct
+        };
 
-        if (selectedMode === "normalOnly" || selectedMode === "bonusOnly") {
-          const mode = selectedMode === "normalOnly" ? "normal" : "bonus";
-          for (let i = 0; i < batchSize; i++) {
-            const r = summonOne(currentSeed, level, count, levels, petCounts, petsByRarity, mode, extraChancePct);
+        if (selectedMode === 'normalOnly' || selectedMode === 'bonusOnly') {
+          const mode = selectedMode === 'normalOnly' ? 'normal' : 'bonus';
+          const totalPulls = batchSize * repeatCount;
+          for (let i = 0; i < totalPulls; i++) {
+            const r = summonOne(state.currentSeed, state.level, state.count, levels, petCounts, mode, extraChancePct);
             rows.push(r);
-            currentSeed = (currentSeed + 1n) & U64_MASK;
-            level = r.nextLevel;
-            count = r.nextCount;
+            state.currentSeed = (state.currentSeed + 1n) & U64_MASK;
+            state.level = r.nextLevel;
+            state.count = r.nextCount;
           }
         } else {
-          let totalTargetPulls = batchSize;
-          let currentPullIdx = 0;
-
-          while (currentPullIdx < totalTargetPulls) {
-            const isBonusPull = currentPullIdx >= batchSize;
-            const mode = isBonusPull ? "bonus" : "normal";
-            const r = summonOne(currentSeed, level, count, levels, petCounts, petsByRarity, mode, extraChancePct);
-
-            rows.push(r);
-
-            if (!isBonusPull && r.bonusTriggered) {
-              totalTargetPulls += 1;
-            }
-
-            currentSeed = (currentSeed + 1n) & U64_MASK;
-            level = r.nextLevel;
-            count = r.nextCount;
-            currentPullIdx += 1;
+          for (let i = 0; i < repeatCount; i++) {
+            consumePullBatch(batchSize, rows, state);
           }
         }
 
-        render(rows, initialSeed, currentSeed, startLevel, startCount, level, count, batchSize);
+        render(rows, initialSeed, state.currentSeed, startLevel, startCount, state.level, state.count);
       } catch (err) {
         errorEl.textContent = err.message || String(err);
       }
     }
-    document.getElementById("runBtn").addEventListener("click", simulate);
-    function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount, batchSize) {
-      const bonusCount = rows.filter(r => r.mode === "bonus").length;
-      document.getElementById("summary").innerHTML = `
+
+    function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount) {
+      const bonusCount = rows.filter(r => r.mode === 'bonus').length;
+      document.getElementById('summary').innerHTML = `
         <div class="mini"><div class="k">시작 Seed</div><div class="v code">${hex64(startSeed)}</div></div>
         <div class="mini"><div class="k">다음 Seed</div><div class="v code">${hex64(endSeed)}</div></div>
         <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1} / ${startCount} → Lv ${endLevel + 1} / ${endCount}</div></div>
         <div class="mini"><div class="k">총 결과</div><div class="v">${rows.length}개 <span class="bonus">(+${bonusCount})</span></div></div>
       `;
 
-      const tbody = document.getElementById("tbody");
-      tbody.innerHTML = rows.map((r, idx) => {
-        const stat1 = r.stats[0]
-          ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%`
-          : "-";
-
-        const stat2 = r.stats[1]
-          ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%`
-          : "-";
-
-        const bonusText = r.mode === "normal"
-          ? `${r.bonusTriggered ? "발동" : "-"}`
-          : "체크 생략";
-
+      document.getElementById('tbody').innerHTML = rows.map((r, idx) => {
+        const stat1 = r.stats[0] ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : '-';
+        const stat2 = r.stats[1] ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : '-';
+        const bonusText = r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략';
         return `
           <tr>
             <td>${idx + 1}</td>
             <td class="code">${hex64(r.seed)}</td>
-            <td>${r.mode === "normal" ? "기본" : "<span class='bonus'>추가</span>"}</td>
+            <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}</td>
+            <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
             <td>${bonusText}</td>
-            <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity]}</b><br><span class="code">${r.rarityRaw}</span></td>
+            <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity]}</b></td>
             <td>${stat1}</td>
             <td>${stat2}</td>
             <td>${r.perfection.toFixed(1)}%</td>
-            <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}</td>
           </tr>
         `;
-      }).join("");
+      }).join('');
     }
 
-    simulate();
+    document.getElementById('runBtn').addEventListener('click', simulate);
   </script>
 </body>
 </html>
