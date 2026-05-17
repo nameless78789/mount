@@ -159,6 +159,9 @@
     </div>
   </div>
 
+  <script src="PetSummonConfig.js"></script>
+  <script src="PetCounts.js"></script>
+
   <script>
     const U64_MASK = (1n << 64n) - 1n;
     const U32 = 4294967296;
@@ -313,8 +316,19 @@
       try {
         const initialSeed = parseHex64(document.getElementById("seed").value, "Seed");
         const stateVal = parseHex64(document.getElementById("state").value, "Level/Count");
-        const levels = [{ "SummonsRequired": 20, "Common": 1, "Rare": 0, "Epic": 0, "Legendary": 0, "Ultimate": 0, "Mythic": 0 }];
-        const petCounts = {
+        const levels = window.PET_SUMMON_CONFIG?.Levels || [
+          {
+            "SummonsRequired": 20,
+            "Common": 1,
+            "Rare": 0,
+            "Epic": 0,
+            "Legendary": 0,
+            "Ultimate": 0,
+            "Mythic": 0
+          }
+        ];
+
+        const petCounts = window.PET_COUNTS || {
           "Common": 3,
           "Rare": 4,
           "Epic": 2,
