@@ -253,7 +253,7 @@
 
     function summonOne(seed, level, count, levels, petCounts, mode, extraChancePct) {
       const currentLevel = level;
-      const currentCount = count;
+      const currentCount = count + 1;
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
       let bonusRaw = null;
@@ -295,11 +295,19 @@
         nextLevel += 1;
       }
 
+      let displayLevel = currentLevel;
+      let displayCount = currentCount;
+
+      if (displayCount >= required) {
+        displayCount -= required;
+        displayLevel += 1;
+      }
+
       return {
         seed,
         mode,
-        currentLevel,
-        currentCount,
+        displayLevel,
+        displayCount,
         bonusTriggered,
         bonusRaw,
         chanceRaw,
@@ -452,7 +460,7 @@
             <td>${stat1}</td>
             <td>${stat2}</td>
             <td>${r.perfection.toFixed(1)}%</td>
-            <td>Lv ${r.currentLevel + 1}<br>Count ${r.currentCount}</td>
+            <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}</td>
           </tr>
         `;
       }).join("");
