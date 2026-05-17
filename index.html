@@ -117,6 +117,17 @@
           </div>
         </div>
 
+        <div class="row">
+          <div>
+            <label>15뽑 보너스 분석 시작 개수</label>
+            <input id="bonusScanCount" type="number" min="1" max="999" step="1" value="50" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="bonusScanBtn" type="button" class="secondary">15뽑 보너스 개수 분석</button>
+          </div>
+        </div>
+
         <label>계산 모드</label>
         <select id="mode">
           <option value="simulate">실제 진행 시뮬레이션: 기본 소환 + 보너스 발생 시 추가 소환</option>
@@ -127,6 +138,27 @@
 
         <button id="runBtn">계산하기</button>
         <div id="error" class="error"></div>
+      </section>
+
+      <section class="card" id="bonusScanSection" style="display:none;">
+        <h2 style="margin:0 0 12px; font-size:20px;">15뽑 시작 Seed별 보너스 개수</h2>
+        <div class="hint" style="margin-bottom:10px;">현재 입력한 Seed를 기준으로 Seed+0, Seed+1, Seed+2...에서 15뽑을 시작했을 때, 앞의 기본 15개 Seed 중 보너스 판정이 몇 번 발동하는지 계산합니다.</div>
+        <div style="overflow:auto; max-height: 420px; border-radius: 12px; border: 1px solid var(--line);">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>시작 Seed</th>
+                <th>현재 Level/Count</th>
+                <th>보너스 개수</th>
+                <th>총 획득</th>
+                <th>다음 Seed</th>
+                <th>다음 Level/Count</th>
+              </tr>
+            </thead>
+            <tbody id="bonusScanBody"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="card">
@@ -416,6 +448,79 @@
       };
     }
 
+    async function bonusScan() {
+      const errorEl = document.getElementById("error");
+      errorEl.textContent = "";
+      try {
+        const { levels, petCounts, petsByRarity } = await loadConfigs();
+        const initialSeed = parseHex64(document.getElementById("seed").value, "Seed");
+        const stateVal = parseHex64(document.getElementById("state").value, "Level/Count");
+        const extraChancePct = Number(document.getElementById("extraChance").value || 0);
+        let scanCount = Number(document.getElementById("bonusScanCount").value);
+        if (!Number.isInteger(scanCount) || scanCount < 1) scanCount = 1;
+        if (scanCount > 999) scanCount = 999;
+        document.getElementById("bonusScanCount").value = scanCount;
+
+        const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);
+        const startCount = Number(stateVal & 0xFFFFFFFFn);
+        const rows = [];
+
+        for (let i = 0; i < scanCount; i++) {
+          let currentSeed = (initialSeed + BigInt(i)) & U64_MASK;
+          let level = startLevel;
+          let count = startCount;
+          let bonusCount = 0;
+
+          for (let j = 0; j < 15; j++) {
+            const r = summonOne(currentSeed, level, count, levels, petCounts, petsByRarity, "normal", extraChancePct);
+            if (r.bonusTriggered) bonusCount++;
+            currentSeed = (currentSeed + 1n) & U64_MASK;
+            level = r.nextLevel;
+            count = r.nextCount;
+          }
+
+          for (let j = 0; j < bonusCount; j++) {
+            const r = summonOne(currentSeed, level, count, levels, petCounts, petsByRarity, "bonus", extraChancePct);
+            currentSeed = (currentSeed + 1n) & U64_MASK;
+            level = r.nextLevel;
+            count = r.nextCount;
+          }
+
+          rows.push({
+            index: i + 1,
+            startSeed: (initialSeed + BigInt(i)) & U64_MASK,
+            startLevel,
+            startCount,
+            bonusCount,
+            total: 15 + bonusCount,
+            nextSeed: currentSeed,
+            nextLevel: level,
+            nextCount: count
+          });
+        }
+
+        renderBonusScan(rows);
+      } catch (err) {
+        errorEl.textContent = err.message || String(err);
+      }
+    }
+
+    function renderBonusScan(rows) {
+      document.getElementById("bonusScanSection").style.display = "block";
+      const body = document.getElementById("bonusScanBody");
+      body.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.index}</td>
+          <td class="code">${hex64(r.startSeed)}</td>
+          <td>Lv ${r.startLevel + 1}<br>Count ${r.startCount}</td>
+          <td><b>${r.bonusCount}</b></td>
+          <td>${r.total}</td>
+          <td class="code">${hex64(r.nextSeed)}</td>
+          <td>Lv ${r.nextLevel + 1}<br>Count ${r.nextCount}</td>
+        </tr>
+      `).join("");
+    }
+
     async function simulate() {
       const errorEl = document.getElementById("error");
       errorEl.textContent = "";
@@ -476,6 +581,7 @@
       }
     }
     document.getElementById("runBtn").addEventListener("click", simulate);
+    document.getElementById("bonusScanBtn").addEventListener("click", bonusScan);
     function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount, batchSize) {
       const bonusCount = rows.filter(r => r.mode === "bonus").length;
       document.getElementById("summary").innerHTML = `
@@ -496,8 +602,8 @@
           : "-";
 
         const bonusText = r.mode === "normal"
-          ? `${r.bonusTriggered ? "발동" : "-"}${r.bonusRaw !== null ? `<br><span class="code">raw ${r.bonusRaw}</span>` : ""}`
-          : "<span class='code'>체크 생략</span>";
+          ? `${r.bonusTriggered ? "발동" : "-"}`
+          : "체크 생략";
 
         return `
           <tr>
