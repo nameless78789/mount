@@ -159,8 +159,7 @@
     </div>
   </div>
 
-  fetch('./EggSummonConfig.json')
-  <script src="PetCounts.js"></script>
+  
 
   <script>
     const U64_MASK = (1n << 64n) - 1n;
@@ -310,32 +309,60 @@
       };
     }
 
-    function simulate() {
-      const errorEl = document.getElementById("error");
-      errorEl.textContent = "";
+    async function loadConfigs() {
+      const eggResp = await fetch('./EggSummonConfig.json');
+      if (!eggResp.ok) throw new Error('EggSummonConfig.json 로드 실패');
+      const eggConfig = await eggResp.json();
+
+      let petCounts = {
+        "Common": 3,
+        "Rare": 4,
+        "Epic": 2,
+        "Legendary": 2,
+        "Ultimate": 2,
+        "Mythic": 2
+      };
+
       try {
-        const initialSeed = parseHex64(document.getElementById("seed").value, "Seed");
-        const stateVal = parseHex64(document.getElementById("state").value, "Level/Count");
-        const levels = window.PET_SUMMON_CONFIG?.Levels || [
-          {
-            "SummonsRequired": 20,
-            "Common": 1,
+        const petResp = await fetch('./PetLibrary.json');
+        if (petResp.ok) {
+          const petLib = await petResp.json();
+          const counts = {
+            "Common": 0,
             "Rare": 0,
             "Epic": 0,
             "Legendary": 0,
             "Ultimate": 0,
             "Mythic": 0
-          }
-        ];
+          };
 
-        const petCounts = window.PET_COUNTS || {
-          "Common": 3,
-          "Rare": 4,
-          "Epic": 2,
-          "Legendary": 2,
-          "Ultimate": 2,
-          "Mythic": 2
-        };
+          if (Array.isArray(petLib)) {
+            for (const pet of petLib) {
+              const rarity = pet.Rarity || pet.rarity;
+              if (counts[rarity] !== undefined) counts[rarity]++;
+            }
+            petCounts = counts;
+          }
+        }
+      } catch (e) {
+        console.warn('PetLibrary.json 로드 실패. 기본 개수 사용');
+      }
+
+      return {
+        levels: eggConfig.Levels || [],
+        petCounts
+      };
+    }
+
+    async function simulate() {
+      const errorEl = document.getElementById("error");
+      errorEl.textContent = "";
+      try {
+        const { levels, petCounts } = await loadConfigs();
+
+        const initialSeed = parseHex64(document.getElementById("seed").value, "Seed");
+        const stateVal = parseHex64(document.getElementById("state").value, "Level/Count");
+        
         
 
         const extraChancePct = Number(document.getElementById("extraChance").value || 0);
@@ -428,7 +455,15 @@
     }
 
     document.getElementById("runBtn").addEventListener("click", simulate);
-    document.getElementById("sampleBtn").addEventListener("click", compareOne);
+    document.getElementById("sampleBtn").addEventListener("click", async () => {
+      const oldMode = document.getElementById("mode").value;
+      const oldPull = document.getElementById("pullCount").value;
+      document.getElementById("pullCount").value = "1";
+      document.getElementById("mode").value = "normalOnly";
+      await simulate();
+      document.getElementById("mode").value = oldMode;
+      document.getElementById("pullCount").value = oldPull;
+    });
     simulate();
   </script>
 </body>
