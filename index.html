@@ -140,7 +140,6 @@
                 <th>방식</th>
                 <th>보너스판정</th>
                 <th>등급</th>
-                <th>펫</th>
                 <th>스탯 1</th>
                 <th>스탯 2</th>
                 <th>완성도</th>
@@ -184,6 +183,22 @@
       "Health": [0.01, 0.15]
     };
     const SUBSTATS_POOL = Object.keys(SUBSTATS_INFO);
+
+    const SUBSTAT_KOR = {
+      "Critical Chance": "치명타 확률",
+      "Critical Damage": "치명타 피해",
+      "Block Chance": "블록",
+      "Health Regen": "체력 재생",
+      "Life Steal": "생명력 흡수",
+      "Double Chance": "더블찬스",
+      "Damage": "피해",
+      "Melee Damage": "근접 피해",
+      "Ranged Damage": "원거리 피해",
+      "Attack Speed": "공격속도",
+      "Skill Damage": "스킬 피해",
+      "Skill Cooldown": "스킬 쿨",
+      "Health": "체력"
+    };
 
     class MetaplayPCG {
       constructor(seed) {
@@ -372,7 +387,10 @@
             if (grouped[rarity] === undefined) continue;
 
             const rawId = petId.Id ?? pet.Id ?? pet.id ?? counts[rarity];
-            const name = pet.Name || pet.name || pet.DisplayName || pet.displayName || pet.LocalizedName || pet.localizedName || key;
+            let name = pet.Name || pet.name || pet.DisplayName || pet.displayName || pet.LocalizedName || pet.localizedName || "";
+            if (!name || name.startsWith('{')) {
+              name = `${RARITY_KOR[rarity] || rarity} #${rawId}`;
+            }
             grouped[rarity].push({
               id: Number(rawId),
               name: String(name)
@@ -457,16 +475,7 @@
         errorEl.textContent = err.message || String(err);
       }
     }
-
-    function compareOne() {
-      const oldMode = document.getElementById("mode").value;
-      const oldPull = document.getElementById("pullCount").value;
-      document.getElementById("pullCount").value = "1";
-      document.getElementById("mode").value = "normalOnly";
-document.getElementById("mode").value = oldMode;
-      document.getElementById("pullCount").value = oldPull;
-    }
-
+    document.getElementById("runBtn").addEventListener("click", simulate);
     function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount, batchSize) {
       const bonusCount = rows.filter(r => r.mode === "bonus").length;
       document.getElementById("summary").innerHTML = `
@@ -478,11 +487,18 @@ document.getElementById("mode").value = oldMode;
 
       const tbody = document.getElementById("tbody");
       tbody.innerHTML = rows.map((r, idx) => {
-        const stat1 = r.stats[0] ? `${r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : "-";
-        const stat2 = r.stats[1] ? `${r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : "-";
+        const stat1 = r.stats[0]
+          ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%`
+          : "-";
+
+        const stat2 = r.stats[1]
+          ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%`
+          : "-";
+
         const bonusText = r.mode === "normal"
           ? `${r.bonusTriggered ? "발동" : "-"}${r.bonusRaw !== null ? `<br><span class="code">raw ${r.bonusRaw}</span>` : ""}`
           : "<span class='code'>체크 생략</span>";
+
         return `
           <tr>
             <td>${idx + 1}</td>
@@ -490,7 +506,6 @@ document.getElementById("mode").value = oldMode;
             <td>${r.mode === "normal" ? "기본" : "<span class='bonus'>추가</span>"}</td>
             <td>${bonusText}</td>
             <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity]}</b><br><span class="code">${r.rarityRaw}</span></td>
-            <td>${r.petName}</td>
             <td>${stat1}</td>
             <td>${stat2}</td>
             <td>${r.perfection.toFixed(1)}%</td>
@@ -500,16 +515,6 @@ document.getElementById("mode").value = oldMode;
       }).join("");
     }
 
-    document.getElementById("runBtn").addEventListener("click", simulate);
-    document.getElementById("sampleBtn").addEventListener("click", async () => {
-      const oldMode = document.getElementById("mode").value;
-      const oldPull = document.getElementById("pullCount").value;
-      document.getElementById("pullCount").value = "1";
-      document.getElementById("mode").value = "normalOnly";
-      await simulate();
-      document.getElementById("mode").value = oldMode;
-      document.getElementById("pullCount").value = oldPull;
-    });
     simulate();
   </script>
 </body>
