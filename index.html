@@ -26,6 +26,30 @@
     }
     .wrap { max-width: 1280px; margin: 0 auto; }
     h1 { margin: 0 0 8px; font-size: 28px; }
+    .top-links {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .top-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      transition: 0.15s ease;
+    }
+    .top-link-btn:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: #4b5563;
+    }
     .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
     .card {
@@ -57,7 +81,9 @@
       background: var(--panel2);
       border: 1px solid var(--line);
     }
-    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .action-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .action-row button { font-size: 16px; padding: 13px 14px; }
     .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .error { color: var(--danger); white-space: pre-wrap; margin-top: 12px; }
     .summary {
@@ -86,12 +112,51 @@
     .rarity-Mythic { color: #d55dff; }
     .bonus { color: var(--ok); font-weight: 800; }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    
+    .search-tools {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: end;
+    }
+    .search-tools label { margin-top: 0; }
+    @media (max-width: 560px) {
+      .search-tools { grid-template-columns: 1fr; }
+    }
+    .column-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #020617;
+    }
+    .column-tools label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      color: var(--text);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .column-tools input[type="checkbox"] {
+      width: auto;
+      padding: 0;
+    }
+    .hidden-col { display: none; }
     @media (max-width: 900px) {
-      .row { grid-template-columns: 1fr 1fr; }
       .summary { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 560px) {
-      .row { grid-template-columns: 1fr; }
+      body { padding: 12px; }
+      .card { padding: 12px; }
+      .row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+      label { font-size: 11px; }
+      input, select, button { font-size: 12px; padding: 8px 6px; }
       .summary { grid-template-columns: 1fr; }
     }
   </style>
@@ -99,6 +164,11 @@
 <body>
   <div class="wrap">
     <h1>Pet Summon Predictor</h1>
+    <div class="top-links">
+      <a class="top-link-btn" href="./egg_bonus.html" target="_blank" rel="noopener noreferrer">
+        Egg Bonus Analyzer 열기
+      </a>
+    </div>
     <div class="desc">
       Seed(HEX16)와 Level/Count(HEX16)를 입력하면 다음 펫 소환 결과를 예측합니다.
       실제 진행 시뮬레이션에서는 1뽑, 15뽑, 50뽑을 몇 번 실행할지 선택할 수 있습니다.
@@ -119,14 +189,6 @@
             <label>Extra Summon Chance (%)</label>
             <input id="extraChance" type="number" step="0.01" value="0" />
           </div>
-          <div>
-            <label>계산 모드</label>
-            <select id="mode">
-              <option value="simulate">실제 진행 시뮬레이션</option>
-              <option value="normalOnly">기본 소환 결과열만 보기</option>
-              <option value="bonusOnly">보너스 소환 결과열만 보기</option>
-            </select>
-          </div>
         </div>
 
         <div class="row">
@@ -142,27 +204,50 @@
             <label>소환 실행 횟수</label>
             <input id="pullRepeat" type="number" min="1" max="999" step="1" value="1" />
           </div>
-          <div></div>
-          <div></div>
+          <div>
+            <label>계산 모드</label>
+            <select id="mode">
+              <option value="simulate">실제 진행 시뮬레이션</option>
+              <option value="normalOnly">기본 소환 테이블 보기</option>
+              <option value="bonusOnly">보너스 소환 테이블 보기</option>
+            </select>
+          </div>
         </div>
         <div class="hint">예: 15뽑 × 3회 = 15뽑을 3번 실행합니다. Level/Count는 직전까지 누적된 값입니다.</div>
 
-        <div class="row">
-          <div>
-            <button id="runBtn">계산하기</button>
-          </div>
-          <div>
-            <button id="csvBtn" type="button" class="secondary">CSV 저장</button>
-          </div>
-          <div></div>
-          <div></div>
+        <div class="action-row">
+          <button id="runBtn">계산하기</button>
         </div>
         <div id="error" class="error"></div>
       </section>
 
-      <section class="card">
+      <section class="card" id="resultCard">
         <div class="summary" id="summary"></div>
-        <div style="overflow:auto; max-height: 720px; border-radius: 12px; border: 1px solid var(--line);">
+        <div class="search-tools">
+          <div>
+            <label>검색</label>
+            <input id="searchInput" type="text" placeholder="Seed, 등급, 스탯 검색" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="searchBtn" type="button" class="secondary">검색</button>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="csvBtn" type="button" class="secondary">CSV 저장</button>
+          </div>
+        </div>
+        <div class="column-tools" id="columnTools">
+          <label><input type="checkbox" data-col="1" checked /> 소비 Seed</label>
+          <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
+          <label><input type="checkbox" data-col="3" checked /> 방식</label>
+          <label><input type="checkbox" data-col="4" checked /> 보너스판정</label>
+          <label><input type="checkbox" data-col="5" checked /> 등급</label>
+          <label><input type="checkbox" data-col="6" checked /> 스탯 1</label>
+          <label><input type="checkbox" data-col="7" checked /> 스탯 2</label>
+          <label><input type="checkbox" data-col="8" checked /> 완성도</label>
+        </div>
+        <div class="table-wrap" style="overflow:auto; max-height: 720px; border-radius: 12px; border: 1px solid var(--line);">
           <table>
             <thead>
               <tr>
@@ -351,10 +436,6 @@
 
       let displayLevel = level;
       let displayCount = count + 1;
-      if (displayCount >= required) {
-        displayCount -= required;
-        displayLevel += 1;
-      }
 
       return {
         seed,
@@ -444,9 +525,13 @@
     }
 
     let lastRows = [];
+    let filteredRows = [];
+    
 
     function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount) {
       lastRows = rows;
+      filteredRows = rows;
+      
       const bonusCount = rows.filter(r => r.mode === 'bonus').length;
       document.getElementById('summary').innerHTML = `
         <div class="mini"><div class="k">시작 Seed</div><div class="v code">${hex64(startSeed)}</div></div>
@@ -455,24 +540,82 @@
         <div class="mini"><div class="k">총 결과</div><div class="v">${rows.length}개 <span class="bonus">(+${bonusCount})</span></div></div>
       `;
 
+      renderTableRows(filteredRows);
+    }
+
+    function rowToDisplay(r, idx) {
+      const stat1 = r.stats[0] ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : '-';
+      const stat2 = r.stats[1] ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : '-';
+      const bonusText = r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략';
+      const modeText = r.mode === 'normal' ? '기본' : '추가';
+      const rarityText = RARITY_KOR[r.rarity];
+      return {
+        no: idx + 1,
+        seed: hex64(r.seed),
+        level: `Lv ${r.displayLevel + 1}`,
+        count: `Count ${r.displayCount}`,
+        mode: modeText,
+        bonus: bonusText,
+        rarity: rarityText,
+        rarityKey: r.rarity,
+        stat1,
+        stat2,
+        perfection: `${r.perfection.toFixed(1)}%`
+      };
+    }
+
+    function renderTableRows(rows) {
       document.getElementById('tbody').innerHTML = rows.map((r, idx) => {
-        const stat1 = r.stats[0] ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : '-';
-        const stat2 = r.stats[1] ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : '-';
-        const bonusText = r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략';
+        const d = rowToDisplay(r, idx);
         return `
           <tr>
-            <td>${idx + 1}</td>
-            <td class="code">${hex64(r.seed)}</td>
-            <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}</td>
-            <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
-            <td>${bonusText}</td>
-            <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity]}</b></td>
-            <td>${stat1}</td>
-            <td>${stat2}</td>
-            <td>${r.perfection.toFixed(1)}%</td>
+            <td>${d.no}</td>
+            <td class="code">${d.seed}</td>
+            <td>${d.level}<br>${d.count}</td>
+            <td>${d.mode === '기본' ? '기본' : '<span class="bonus">추가</span>'}</td>
+            <td>${d.bonus}</td>
+            <td class="rarity-${d.rarityKey}"><b>${d.rarity}</b></td>
+            <td>${d.stat1}</td>
+            <td>${d.stat2}</td>
+            <td>${d.perfection}</td>
           </tr>
         `;
       }).join('');
+      applyColumnVisibility();
+    }
+
+    
+
+    function applySearch() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      if (!q) {
+        filteredRows = lastRows;
+      } else {
+        filteredRows = lastRows.filter((r, idx) => {
+          const d = rowToDisplay(r, idx);
+          return Object.values(d).some(v => String(v).toLowerCase().includes(q));
+        });
+      }
+
+      renderTableRows(filteredRows);
+    }
+
+    function getVisibleColumnIndexes() {
+      const indexes = [0];
+      document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) indexes.push(Number(cb.dataset.col));
+      });
+      return indexes;
+    }
+
+    function applyColumnVisibility() {
+      const visible = new Set(getVisibleColumnIndexes());
+      document.querySelectorAll('table tr').forEach(row => {
+        Array.from(row.children).forEach((cell, idx) => {
+          cell.classList.toggle('hidden-col', !visible.has(idx));
+        });
+      });
     }
 
     function csvEscape(value) {
@@ -481,34 +624,34 @@
     }
 
     function downloadCsv() {
-      if (!lastRows.length) {
+      const exportRows = filteredRows.length ? filteredRows : lastRows;
+      if (!exportRows.length) {
         alert('저장할 결과가 없습니다. 먼저 계산하기를 실행하세요.');
         return;
       }
 
-      const header = ['#', '소비 Seed', '현재 Level', '현재 Count', '방식', '보너스판정', '등급', '스탯 1', '스탯 2', '완성도'];
-      const lines = [header.map(csvEscape).join(',')];
-
-      lastRows.forEach((r, idx) => {
-        const stat1 = r.stats[0] ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : '-';
-        const stat2 = r.stats[1] ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : '-';
-        const bonusText = r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략';
-        const row = [
-          idx + 1,
-          hex64(r.seed),
-          `Lv ${r.displayLevel + 1}`,
-          `Count ${r.displayCount}`,
-          r.mode === 'normal' ? '기본' : '추가',
-          bonusText,
-          RARITY_KOR[r.rarity],
-          stat1,
-          stat2,
-          `${r.perfection.toFixed(1)}%`
-        ];
-        lines.push(row.map(csvEscape).join(','));
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '방식', '보너스판정', '등급', '스탯 1', '스탯 2', '완성도'];
+      const visibleIndexes = getVisibleColumnIndexes();
+      const exportIndexes = [];
+      visibleIndexes.forEach(idx => {
+        if (idx === 2) {
+          exportIndexes.push(2, 3);
+        } else if (idx > 2) {
+          exportIndexes.push(idx + 1);
+        } else {
+          exportIndexes.push(idx);
+        }
       });
 
-      const csv = '\\ufeff' + lines.join('\\n');
+      const lines = [exportIndexes.map(i => csvEscape(allHeaders[i])).join(',')];
+
+      exportRows.forEach((r, idx) => {
+        const d = rowToDisplay(r, idx);
+        const allValues = [d.no, d.seed, d.level, d.count, d.mode, d.bonus, d.rarity, d.stat1, d.stat2, d.perfection];
+        lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
+      });
+
+      const csv = '\ufeff' + lines.join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -531,7 +674,15 @@
 
     document.getElementById('runBtn').addEventListener('click', simulate);
     document.getElementById('csvBtn').addEventListener('click', downloadCsv);
+    document.getElementById('searchBtn').addEventListener('click', applySearch);
+    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applySearch();
+    });
     document.getElementById('pullType').addEventListener('change', updateRepeatLimitHint);
+    
+    document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', applyColumnVisibility);
+    });
     updateRepeatLimitHint();
   </script>
 </body>
