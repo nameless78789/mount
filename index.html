@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Forge Master Pet Summon Predictor</title>
+  <title>Game Utility Tools</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -12,684 +12,164 @@
       --text: #e5e7eb;
       --muted: #9ca3af;
       --line: #374151;
-      --danger: #f87171;
+      --accent: #60a5fa;
       --ok: #34d399;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #020617, var(--bg));
-      color: var(--text);
       min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.16), transparent 36%),
+        linear-gradient(135deg, #020617, var(--bg));
+      color: var(--text);
+      padding: 28px;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin-bottom: 24px;
       padding: 24px;
-    }
-    .wrap { max-width: 1280px; margin: 0 auto; }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    .top-links {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
-    .top-link-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 14px;
-      border-radius: 10px;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.04);
+      border-radius: 22px;
+      background: rgba(17, 24, 39, 0.82);
+      box-shadow: 0 18px 48px rgba(0,0,0,0.34);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      letter-spacing: -0.02em;
+    }
+
+    .desc {
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+      max-width: 760px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .tool-card {
+      display: block;
+      padding: 20px;
+      min-height: 150px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(17, 24, 39, 0.9);
       color: var(--text);
       text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
-      transition: 0.15s ease;
+      box-shadow: 0 14px 38px rgba(0,0,0,0.28);
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
-    .top-link-btn:hover {
-      background: rgba(255,255,255,0.08);
-      border-color: #4b5563;
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      border-color: #60a5fa;
+      background: rgba(31, 41, 55, 0.94);
     }
-    .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
-    .card {
-      background: rgba(17, 24, 39, 0.9);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 14px 40px rgba(0,0,0,0.35);
-    }
-    label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, select, button {
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: #020617;
-      color: var(--text);
-      padding: 10px 12px;
-      font-size: 14px;
-      font-family: inherit;
-    }
-    button {
-      margin-top: 14px;
-      background: linear-gradient(135deg, #2563eb, #7c3aed);
-      border: none;
-      cursor: pointer;
-      font-weight: 700;
-    }
-    button.secondary {
-      background: var(--panel2);
-      border: 1px solid var(--line);
-    }
-    .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .action-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
-    .action-row button { font-size: 16px; padding: 13px 14px; }
-    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
-    .error { color: var(--danger); white-space: pre-wrap; margin-top: 12px; }
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .mini {
-      background: #020617;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-    }
-    .mini .k { color: var(--muted); font-size: 12px; }
-    .mini .v { margin-top: 4px; font-weight: 800; font-size: 16px; word-break: break-all; }
-    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; }
-    th { color: var(--muted); background: #020617; position: sticky; top: 0; }
-    tr:hover td { background: rgba(255,255,255,0.03); }
-    .rarity-Common { color: #f1f1f1; }
-    .rarity-Rare { color: #5dd8ff; }
-    .rarity-Epic { color: #5dff8a; }
-    .rarity-Legendary { color: #fcff5d; }
-    .rarity-Ultimate { color: #ff5d5d; }
-    .rarity-Mythic { color: #d55dff; }
-    .bonus { color: var(--ok); font-weight: 800; }
-    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    
-    .search-tools {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-      align-items: end;
-    }
-    .search-tools label { margin-top: 0; }
-    @media (max-width: 560px) {
-      .search-tools { grid-template-columns: 1fr; }
-    }
-    .column-tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 14px;
-      margin-bottom: 12px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #020617;
-    }
-    .column-tools label {
+
+    .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #020617;
+      color: var(--muted);
+      padding: 4px 9px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tool-title {
+      font-size: 21px;
+      font-weight: 800;
+      margin: 0 0 8px;
+    }
+
+    .tool-desc {
+      color: var(--muted);
+      line-height: 1.55;
       margin: 0;
-      color: var(--text);
-      font-size: 13px;
-      white-space: nowrap;
+      font-size: 14px;
     }
-    .column-tools input[type="checkbox"] {
-      width: auto;
-      padding: 0;
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
     }
-    .hidden-col { display: none; }
-    @media (max-width: 900px) {
-      .summary { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 560px) {
-      body { padding: 12px; }
-      .card { padding: 12px; }
-      .row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-      label { font-size: 11px; }
-      input, select, button { font-size: 12px; padding: 8px 6px; }
-      .summary { grid-template-columns: 1fr; }
+
+    @media (max-width: 760px) {
+      body { padding: 14px; }
+      .hero { padding: 18px; border-radius: 18px; }
+      h1 { font-size: 26px; }
+      .grid { grid-template-columns: 1fr; }
+      .tool-card { min-height: 130px; padding: 18px; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Pet Summon Predictor</h1>
-    <div class="top-links">
-      <a class="top-link-btn" href="./egg_bonus.html" target="_blank" rel="noopener noreferrer">
-        펫 보너스 분석기
+  <main class="wrap">
+    <section class="hero">
+      <h1>Game Utility Tools</h1>
+      <p class="desc">
+        펫과 탈것 소환 결과를 확인하고, 보너스 발생 구간과 최적 소환 전략을 분석하는 도구 모음입니다.
+        사용할 기능을 선택하세요.
+      </p>
+    </section>
+
+    <section class="grid">
+      <a class="tool-card" href="./egg_seed_table.html" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Pet</span>
+        <h2 class="tool-title">펫 시드 테이블</h2>
+        <p class="tool-desc">
+          펫 Seed를 기준으로 등급과 스탯 결과를 테이블 형태로 확인합니다.
+        </p>
       </a>
-      <a class="top-link-btn" href="./mount_seed_table.html" target="_blank" rel="noopener noreferrer">
-        탈것 시드 테이블
+
+      <a class="tool-card" href="./egg_bonus_optimizer.html" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Pet Bonus</span>
+        <h2 class="tool-title">펫 보너스 최적화</h2>
+        <p class="tool-desc">
+          제한된 비용으로 펫 소환 개수를 최대화할 수 있는 선택지를 계산합니다.
+        </p>
       </a>
-      <a class="top-link-btn" href="./mount_bonus_optimizer.html" target="_blank" rel="noopener noreferrer">
-        탈것 보너스 최적화
+
+      <a class="tool-card" href="./mount_seed_table.html" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Mount</span>
+        <h2 class="tool-title">탈것 시드 테이블</h2>
+        <p class="tool-desc">
+          탈것 Seed를 기준으로 등급과 스탯 결과를 테이블 형태로 확인합니다.
+        </p>
       </a>
+
+      <a class="tool-card" href="./mount_bonus_optimizer.html" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Mount Bonus</span>
+        <h2 class="tool-title">탈것 보너스 최적화</h2>
+        <p class="tool-desc">
+          제한된 비용으로 탈것 소환 개수를 최대화할 수 있는 선택지를 계산합니다.
+        </p>
+      </a>
+    </section>
+
+    <div class="footer-note">
+      각 도구는 같은 폴더의 JSON 데이터 파일을 사용합니다.
     </div>
-    <div class="desc">
-      Seed(HEX16)와 Level/Count(HEX16)를 입력하면 다음 펫 소환 결과를 예측합니다.
-      실제 진행 시뮬레이션에서는 1뽑, 15뽑, 50뽑을 몇 번 실행할지 선택할 수 있습니다.
-    </div>
-
-    <div class="grid">
-      <section class="card">
-        <div class="row">
-          <div>
-            <label>Pet Seed (HEX16)</label>
-            <input id="seed" value="" spellcheck="false" placeholder="예: 1234567812345678" />
-          </div>
-          <div>
-            <label>Level/Count State (HEX16)</label>
-            <input id="state" value="" spellcheck="false" placeholder="예: 1234567812345678" />
-          </div>
-          <div>
-            <label>Extra Summon Chance (%)</label>
-            <input id="extraChance" type="number" step="0.01" value="0" />
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>뽑기 종류</label>
-            <select id="pullType">
-              <option value="1">1뽑</option>
-              <option value="15">15뽑</option>
-              <option value="50">50뽑</option>
-            </select>
-          </div>
-          <div>
-            <label>소환 실행 횟수</label>
-            <input id="pullRepeat" type="number" min="1" max="999" step="1" value="1" />
-          </div>
-          <div>
-            <label>계산 모드</label>
-            <select id="mode">
-              <option value="simulate">실제 진행 시뮬레이션</option>
-              <option value="normalOnly">기본 소환 테이블 보기</option>
-              <option value="bonusOnly">보너스 소환 테이블 보기</option>
-            </select>
-          </div>
-        </div>
-        <div class="hint">예: 15뽑 × 3회 = 15뽑을 3번 실행합니다. Level/Count는 직전까지 누적된 값입니다.</div>
-
-        <div class="action-row">
-          <button id="runBtn">계산하기</button>
-        </div>
-        <div id="error" class="error"></div>
-      </section>
-
-      <section class="card" id="resultCard">
-        <div class="summary" id="summary"></div>
-        <div class="search-tools">
-          <div>
-            <label>검색</label>
-            <input id="searchInput" type="text" placeholder="Seed, 등급, 스탯 검색" />
-          </div>
-          <div>
-            <label>&nbsp;</label>
-            <button id="searchBtn" type="button" class="secondary">검색</button>
-          </div>
-          <div>
-            <label>&nbsp;</label>
-            <button id="csvBtn" type="button" class="secondary">CSV 저장</button>
-          </div>
-        </div>
-        <div class="column-tools" id="columnTools">
-          <label><input type="checkbox" data-col="1" checked /> 소비 Seed</label>
-          <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
-          <label><input type="checkbox" data-col="3" checked /> 방식</label>
-          <label><input type="checkbox" data-col="4" checked /> 보너스판정</label>
-          <label><input type="checkbox" data-col="5" checked /> 등급</label>
-          <label><input type="checkbox" data-col="6" checked /> 스탯 1</label>
-          <label><input type="checkbox" data-col="7" checked /> 스탯 2</label>
-          <label><input type="checkbox" data-col="8" checked /> 완성도</label>
-        </div>
-        <div class="table-wrap" style="overflow:auto; max-height: 720px; border-radius: 12px; border: 1px solid var(--line);">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>소비 Seed</th>
-                <th>현재 Level/Count</th>
-                <th>방식</th>
-                <th>보너스판정</th>
-                <th>등급</th>
-                <th>스탯 1</th>
-                <th>스탯 2</th>
-                <th>완성도</th>
-              </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <script>
-    const U64_MASK = (1n << 64n) - 1n;
-    const U32 = 4294967296;
-    const MULT = 0x5851f42d4c957f2dn;
-    const INIT_INC = 0x1a08ee1184ba6d32n;
-    const STEP_INC = 0x14057b7ef767814fn;
-
-    const RARITIES = ["Common", "Rare", "Epic", "Legendary", "Ultimate", "Mythic"];
-    const RARITY_KOR = {
-      Common: "일반", Rare: "희귀", Epic: "서사", Legendary: "전설", Ultimate: "궁극", Mythic: "신화"
-    };
-
-    const SUBSTATS_INFO = {
-      "Critical Chance": [0.01, 0.12],
-      "Critical Damage": [0.01, 0.80],
-      "Block Chance": [0.01, 0.05],
-      "Health Regen": [0.01, 0.04],
-      "Life Steal": [0.01, 0.20],
-      "Double Chance": [0.01, 0.20],
-      "Damage": [0.01, 0.15],
-      "Melee Damage": [0.01, 0.50],
-      "Ranged Damage": [0.01, 0.15],
-      "Attack Speed": [0.01, 0.40],
-      "Skill Damage": [0.01, 0.30],
-      "Skill Cooldown": [0.01, 0.07],
-      "Health": [0.01, 0.15]
-    };
-    const SUBSTATS_POOL = Object.keys(SUBSTATS_INFO);
-    const SUBSTAT_KOR = {
-      "Critical Chance": "치명타 확률",
-      "Critical Damage": "치명타 피해",
-      "Block Chance": "블록",
-      "Health Regen": "체력 재생",
-      "Life Steal": "생명력 흡수",
-      "Double Chance": "더블찬스",
-      "Damage": "피해",
-      "Melee Damage": "근접 피해",
-      "Ranged Damage": "원거리 피해",
-      "Attack Speed": "공격속도",
-      "Skill Damage": "스킬 피해",
-      "Skill Cooldown": "스킬 쿨",
-      "Health": "체력"
-    };
-
-    class MetaplayPCG {
-      constructor(seed) {
-        this.state = (seed * MULT + INIT_INC) & U64_MASK;
-      }
-      nextPcg32() {
-        const old = this.state;
-        this.state = (old * MULT + STEP_INC) & U64_MASK;
-        const xorshifted = Number((((old >> 18n) ^ old) >> 27n) & 0xFFFFFFFFn) >>> 0;
-        const rot = Number((old >> 59n) & 0x1Fn);
-        const leftShift = (xorshifted << ((~rot + 1) & 0x1F)) >>> 0;
-        const rightShift = (xorshifted >>> rot) >>> 0;
-        return (leftShift + rightShift) >>> 0;
-      }
-      nextF64() { return this.nextPcg32() / U32; }
-      nextInt(maxVal) {
-        if (maxVal <= 0) return 0;
-        const raw = this.nextPcg32();
-        const posVal = (raw >>> 1) & 0x7FFFFFFF;
-        return posVal % maxVal;
-      }
-      nextULong() {
-        const high = BigInt(this.nextPcg32());
-        const low = BigInt(this.nextPcg32());
-        return ((high << 32n) | low) & U64_MASK;
-      }
-      nextGuid() { this.nextULong(); this.nextULong(); }
-    }
-
-    function parseHex64(s, fieldName) {
-      const clean = s.trim().replace(/^0x/i, "");
-      if (!/^[0-9a-fA-F]{1,16}$/.test(clean)) throw new Error(`${fieldName}는 16자리 이하 HEX 값이어야 합니다.`);
-      return BigInt("0x" + clean);
-    }
-
-    function hex64(v) {
-      return (v & U64_MASK).toString(16).toUpperCase().padStart(16, "0");
-    }
-
-    function getSubstatValue(name, f64) {
-      const [low, up] = SUBSTATS_INFO[name];
-      return low + f64 * (up - low);
-    }
-
-    async function loadConfigs() {
-      const eggResp = await fetch('./EggSummonConfig.json');
-      if (!eggResp.ok) throw new Error('EggSummonConfig.json 로드 실패');
-      const eggConfig = await eggResp.json();
-      if (!Array.isArray(eggConfig.Levels) || eggConfig.Levels.length === 0) throw new Error('EggSummonConfig.json의 Levels 배열이 비어 있습니다.');
-
-      let petCounts = { Common: 3, Rare: 4, Epic: 2, Legendary: 2, Ultimate: 2, Mythic: 2 };
-      try {
-        const petResp = await fetch('./PetLibrary.json');
-        if (petResp.ok) {
-          const petLib = await petResp.json();
-          const counts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0 };
-          const entries = Array.isArray(petLib) ? petLib.map((v, i) => [String(i), v]) : Object.entries(petLib);
-          for (const [key, pet] of entries) {
-            const petId = pet.PetId || pet.EggId || pet.MountId || pet.Id || {};
-            const rarity = petId.Rarity || pet.Rarity || pet.rarity;
-            if (counts[rarity] !== undefined) counts[rarity]++;
-          }
-          for (const rarity of RARITIES) {
-            if (counts[rarity] > 0) petCounts[rarity] = counts[rarity];
-          }
-        }
-      } catch (e) {
-        console.warn('PetLibrary.json 로드 실패. 기본 개수 사용');
-      }
-      return { levels: eggConfig.Levels, petCounts };
-    }
-
-    function rollRarity(pcg, level, levels) {
-      const lvlIdx = Math.min(level, levels.length - 1);
-      const data = levels[lvlIdx];
-      const raw = pcg.nextPcg32();
-      let acc = 0;
-      for (const rarity of RARITIES) {
-        const chance = Number(data[rarity] || 0);
-        acc += Math.round(chance * U32);
-        if (raw < acc) return { rarity, lvlData: data };
-      }
-      return { rarity: "Common", lvlData: data };
-    }
-
-    function summonOne(seed, level, count, levels, petCounts, mode, extraChancePct) {
-      const pcg = new MetaplayPCG(seed);
-      let bonusTriggered = false;
-
-      if (mode === "normal") {
-        const bonusRaw = pcg.nextPcg32();
-        const chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
-        bonusTriggered = bonusRaw < chanceRaw;
-      }
-
-      const { rarity, lvlData } = rollRarity(pcg, level, levels);
-      const countInRarity = Number(petCounts[rarity] || 1);
-      pcg.nextInt(countInRarity);
-      pcg.nextGuid();
-
-      const numSubstats = ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
-      const availableStats = [...SUBSTATS_POOL];
-      const stats = [];
-      let f64Sum = 0;
-
-      for (let i = 0; i < numSubstats; i++) {
-        const statIdx = pcg.nextInt(availableStats.length);
-        const statName = availableStats[statIdx];
-        availableStats.splice(statIdx, 1);
-        const f64 = pcg.nextF64();
-        f64Sum += f64;
-        stats.push({ name: statName, value: getSubstatValue(statName, f64) * 100, f64 });
-      }
-
-      let nextLevel = level;
-      let nextCount = count + 1;
-      const required = Number(lvlData.SummonsRequired || 999999999);
-      if (nextCount >= required) {
-        nextCount -= required;
-        nextLevel += 1;
-      }
-
-      let displayLevel = level;
-      let displayCount = count + 1;
-
-      return {
-        seed,
-        mode,
-        displayLevel,
-        displayCount,
-        bonusTriggered,
-        rarity,
-        stats,
-        perfection: (f64Sum / numSubstats) * 100,
-        nextLevel,
-        nextCount
-      };
-    }
-
-    function consumePullBatch(batchSize, rows, state) {
-      let totalTargetPulls = batchSize;
-      let currentPullIdx = 0;
-
-      while (currentPullIdx < totalTargetPulls) {
-        const isBonusPull = currentPullIdx >= batchSize;
-        const mode = isBonusPull ? "bonus" : "normal";
-        const r = summonOne(state.currentSeed, state.level, state.count, state.levels, state.petCounts, mode, state.extraChancePct);
-        rows.push(r);
-
-        if (!isBonusPull && r.bonusTriggered) {
-          totalTargetPulls += 1;
-        }
-
-        state.currentSeed = (state.currentSeed + 1n) & U64_MASK;
-        state.level = r.nextLevel;
-        state.count = r.nextCount;
-        currentPullIdx += 1;
-      }
-    }
-
-    async function simulate() {
-      const errorEl = document.getElementById('error');
-      errorEl.textContent = '';
-      try {
-        const { levels, petCounts } = await loadConfigs();
-        const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
-        const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
-        const extraChancePct = Number(document.getElementById('extraChance').value || 0);
-        const batchSize = Number(document.getElementById('pullType').value);
-        let repeatCount = Number(document.getElementById('pullRepeat').value);
-        if (!Number.isInteger(repeatCount) || repeatCount < 1) repeatCount = 1;
-        const repeatLimits = { 1: 100, 15: 30, 50: 10 };
-        const maxRepeat = repeatLimits[batchSize] || 100;
-        if (repeatCount > maxRepeat) repeatCount = maxRepeat;
-        document.getElementById('pullRepeat').max = maxRepeat;
-        document.getElementById('pullRepeat').value = repeatCount;
-        const selectedMode = document.getElementById('mode').value;
-
-        const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);
-        const startCount = Number(stateVal & 0xFFFFFFFFn);
-        const rows = [];
-        const state = {
-          currentSeed: initialSeed,
-          level: startLevel,
-          count: startCount,
-          levels,
-          petCounts,
-          extraChancePct
-        };
-
-        if (selectedMode === 'normalOnly' || selectedMode === 'bonusOnly') {
-          const mode = selectedMode === 'normalOnly' ? 'normal' : 'bonus';
-          const totalPulls = batchSize * repeatCount;
-          for (let i = 0; i < totalPulls; i++) {
-            const r = summonOne(state.currentSeed, state.level, state.count, levels, petCounts, mode, extraChancePct);
-            rows.push(r);
-            state.currentSeed = (state.currentSeed + 1n) & U64_MASK;
-            state.level = r.nextLevel;
-            state.count = r.nextCount;
-          }
-        } else {
-          for (let i = 0; i < repeatCount; i++) {
-            consumePullBatch(batchSize, rows, state);
-          }
-        }
-
-        render(rows, initialSeed, state.currentSeed, startLevel, startCount, state.level, state.count);
-      } catch (err) {
-        errorEl.textContent = err.message || String(err);
-      }
-    }
-
-    let lastRows = [];
-    let filteredRows = [];
-    
-
-    function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount) {
-      lastRows = rows;
-      filteredRows = rows;
-      
-      const bonusCount = rows.filter(r => r.mode === 'bonus').length;
-      document.getElementById('summary').innerHTML = `
-        <div class="mini"><div class="k">시작 Seed</div><div class="v code">${hex64(startSeed)}</div></div>
-        <div class="mini"><div class="k">다음 Seed</div><div class="v code">${hex64(endSeed)}</div></div>
-        <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1} / ${startCount} → Lv ${endLevel + 1} / ${endCount}</div></div>
-        <div class="mini"><div class="k">총 결과</div><div class="v">${rows.length}개 <span class="bonus">(+${bonusCount})</span></div></div>
-      `;
-
-      renderTableRows(filteredRows);
-    }
-
-    function rowToDisplay(r, idx) {
-      const stat1 = r.stats[0] ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : '-';
-      const stat2 = r.stats[1] ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : '-';
-      const bonusText = r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략';
-      const modeText = r.mode === 'normal' ? '기본' : '추가';
-      const rarityText = RARITY_KOR[r.rarity];
-      return {
-        no: idx + 1,
-        seed: hex64(r.seed),
-        level: `Lv ${r.displayLevel + 1}`,
-        count: `Count ${r.displayCount}`,
-        mode: modeText,
-        bonus: bonusText,
-        rarity: rarityText,
-        rarityKey: r.rarity,
-        stat1,
-        stat2,
-        perfection: `${r.perfection.toFixed(1)}%`
-      };
-    }
-
-    function renderTableRows(rows) {
-      document.getElementById('tbody').innerHTML = rows.map((r, idx) => {
-        const d = rowToDisplay(r, idx);
-        return `
-          <tr>
-            <td>${d.no}</td>
-            <td class="code">${d.seed}</td>
-            <td>${d.level}<br>${d.count}</td>
-            <td>${d.mode === '기본' ? '기본' : '<span class="bonus">추가</span>'}</td>
-            <td>${d.bonus}</td>
-            <td class="rarity-${d.rarityKey}"><b>${d.rarity}</b></td>
-            <td>${d.stat1}</td>
-            <td>${d.stat2}</td>
-            <td>${d.perfection}</td>
-          </tr>
-        `;
-      }).join('');
-      applyColumnVisibility();
-    }
-
-    
-
-    function applySearch() {
-      const q = document.getElementById('searchInput').value.trim().toLowerCase();
-
-      if (!q) {
-        filteredRows = lastRows;
-      } else {
-        filteredRows = lastRows.filter((r, idx) => {
-          const d = rowToDisplay(r, idx);
-          return Object.values(d).some(v => String(v).toLowerCase().includes(q));
-        });
-      }
-
-      renderTableRows(filteredRows);
-    }
-
-    function getVisibleColumnIndexes() {
-      const indexes = [0];
-      document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
-        if (cb.checked) indexes.push(Number(cb.dataset.col));
-      });
-      return indexes;
-    }
-
-    function applyColumnVisibility() {
-      const visible = new Set(getVisibleColumnIndexes());
-      document.querySelectorAll('table tr').forEach(row => {
-        Array.from(row.children).forEach((cell, idx) => {
-          cell.classList.toggle('hidden-col', !visible.has(idx));
-        });
-      });
-    }
-
-    function csvEscape(value) {
-      const s = String(value ?? '');
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-
-    function downloadCsv() {
-      const exportRows = filteredRows.length ? filteredRows : lastRows;
-      if (!exportRows.length) {
-        alert('저장할 결과가 없습니다. 먼저 계산하기를 실행하세요.');
-        return;
-      }
-
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '방식', '보너스판정', '등급', '스탯 1', '스탯 2', '완성도'];
-      const visibleIndexes = getVisibleColumnIndexes();
-      const exportIndexes = [];
-      visibleIndexes.forEach(idx => {
-        if (idx === 2) {
-          exportIndexes.push(2, 3);
-        } else if (idx > 2) {
-          exportIndexes.push(idx + 1);
-        } else {
-          exportIndexes.push(idx);
-        }
-      });
-
-      const lines = [exportIndexes.map(i => csvEscape(allHeaders[i])).join(',')];
-
-      exportRows.forEach((r, idx) => {
-        const d = rowToDisplay(r, idx);
-        const allValues = [d.no, d.seed, d.level, d.count, d.mode, d.bonus, d.rarity, d.stat1, d.stat2, d.perfection];
-        lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
-      });
-
-      const csv = '\ufeff' + lines.join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pet_summon_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function updateRepeatLimitHint() {
-      const batchSize = Number(document.getElementById('pullType').value);
-      const repeatLimits = { 1: 100, 15: 30, 50: 10 };
-      const maxRepeat = repeatLimits[batchSize] || 100;
-      const input = document.getElementById('pullRepeat');
-      input.max = maxRepeat;
-      if (Number(input.value) > maxRepeat) input.value = maxRepeat;
-    }
-
-    document.getElementById('runBtn').addEventListener('click', simulate);
-    document.getElementById('csvBtn').addEventListener('click', downloadCsv);
-    document.getElementById('searchBtn').addEventListener('click', applySearch);
-    document.getElementById('searchInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') applySearch();
-    });
-    document.getElementById('pullType').addEventListener('change', updateRepeatLimitHint);
-    
-    document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', applyColumnVisibility);
-    });
-    updateRepeatLimitHint();
-  </script>
+  </main>
 </body>
 </html>
