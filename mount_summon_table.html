@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Forge Master Pet Summon Predictor</title>
+  <title>Forge Master Mount Summon Table Compare</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -26,30 +26,6 @@
     }
     .wrap { max-width: 1280px; margin: 0 auto; }
     h1 { margin: 0 0 8px; font-size: 28px; }
-    .top-links {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
-    .top-link-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
-      transition: 0.15s ease;
-    }
-    .top-link-btn:hover {
-      background: rgba(255,255,255,0.08);
-      border-color: #4b5563;
-    }
     .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
     .card {
@@ -60,7 +36,7 @@
       box-shadow: 0 14px 40px rgba(0,0,0,0.35);
     }
     label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, select, button {
+    input, button {
       width: 100%;
       border-radius: 10px;
       border: 1px solid var(--line);
@@ -81,10 +57,10 @@
       background: var(--panel2);
       border: 1px solid var(--line);
     }
-    .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .action-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .action-row button { font-size: 16px; padding: 13px 14px; }
-    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
     .error { color: var(--danger); white-space: pre-wrap; margin-top: 12px; }
     .summary {
       display: grid;
@@ -101,7 +77,7 @@
     .mini .k { color: var(--muted); font-size: 12px; }
     .mini .v { margin-top: 4px; font-weight: 800; font-size: 16px; word-break: break-all; }
     table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; white-space: nowrap; }
     th { color: var(--muted); background: #020617; position: sticky; top: 0; }
     tr:hover td { background: rgba(255,255,255,0.03); }
     .rarity-Common { color: #f1f1f1; }
@@ -112,7 +88,6 @@
     .rarity-Mythic { color: #d55dff; }
     .bonus { color: var(--ok); font-weight: 800; }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    
     .search-tools {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;
@@ -121,9 +96,6 @@
       align-items: end;
     }
     .search-tools label { margin-top: 0; }
-    @media (max-width: 560px) {
-      .search-tools { grid-template-columns: 1fr; }
-    }
     .column-tools {
       display: flex;
       flex-wrap: wrap;
@@ -143,86 +115,58 @@
       font-size: 13px;
       white-space: nowrap;
     }
-    .column-tools input[type="checkbox"] {
-      width: auto;
-      padding: 0;
-    }
+    .column-tools input[type="checkbox"] { width: auto; padding: 0; }
     .hidden-col { display: none; }
-    @media (max-width: 900px) {
+    @media (max-width: 1000px) {
+      .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .summary { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 560px) {
       body { padding: 12px; }
       .card { padding: 12px; }
-      .row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+      .row { grid-template-columns: 1fr; gap: 6px; }
+      .search-tools { grid-template-columns: 1fr; }
       label { font-size: 11px; }
-      input, select, button { font-size: 12px; padding: 8px 6px; }
+      input, button { font-size: 12px; padding: 8px 6px; }
       .summary { grid-template-columns: 1fr; }
+      th, td { font-size: 12px; padding: 8px 6px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Pet Summon Predictor</h1>
-    <div class="top-links">
-      <a class="top-link-btn" href="./egg_bonus.html" target="_blank" rel="noopener noreferrer">
-        펫 보너스 분석기
-      </a>
-      <a class="top-link-btn" href="./mount_seed_table.html" target="_blank" rel="noopener noreferrer">
-        탈것 시드 테이블
-      </a>
-      <a class="top-link-btn" href="./mount_bonus_optimizer.html" target="_blank" rel="noopener noreferrer">
-        탈것 보너스 최적화
-      </a>
-    </div>
+    <h1>Mount Summon Table Compare</h1>
     <div class="desc">
-      Seed(HEX16)와 Level/Count(HEX16)를 입력하면 다음 펫 소환 결과를 예측합니다.
-      실제 진행 시뮬레이션에서는 1뽑, 15뽑, 50뽑을 몇 번 실행할지 선택할 수 있습니다.
+      기존 탈것 기본 소환 테이블 보기와 보너스 소환 테이블 보기를 하나로 합친 비교표입니다.
+      같은 Seed에서 기본 소환 결과와 보너스 소환 결과를 한 줄에 함께 표시합니다.
     </div>
 
     <div class="grid">
       <section class="card">
         <div class="row">
           <div>
-            <label>Pet Seed (HEX16)</label>
+            <label>Mount Seed (HEX16)</label>
             <input id="seed" value="" spellcheck="false" placeholder="예: 1234567812345678" />
           </div>
           <div>
             <label>Level/Count State (HEX16)</label>
-            <input id="state" value="" spellcheck="false" placeholder="예: 1234567812345678" />
+            <input id="state" value="" spellcheck="false" placeholder="예: 0000005A0000000E" />
           </div>
           <div>
             <label>Extra Summon Chance (%)</label>
             <input id="extraChance" type="number" step="0.01" value="0" />
           </div>
-        </div>
-
-        <div class="row">
           <div>
-            <label>뽑기 종류</label>
-            <select id="pullType">
-              <option value="1">1뽑</option>
-              <option value="15">15뽑</option>
-              <option value="50">50뽑</option>
-            </select>
-          </div>
-          <div>
-            <label>소환 실행 횟수</label>
-            <input id="pullRepeat" type="number" min="1" max="999" step="1" value="1" />
-          </div>
-          <div>
-            <label>계산 모드</label>
-            <select id="mode">
-              <option value="simulate">실제 진행 시뮬레이션</option>
-              <option value="normalOnly">기본 소환 테이블 보기</option>
-              <option value="bonusOnly">보너스 소환 테이블 보기</option>
-            </select>
+            <label>비교할 Seed 개수</label>
+            <input id="scanCount" type="number" min="1" max="500" step="1" value="50" />
           </div>
         </div>
-        <div class="hint">예: 15뽑 × 3회 = 15뽑을 3번 실행합니다. Level/Count는 직전까지 누적된 값입니다.</div>
-
+        <div class="hint">
+          Level/Count는 직전까지 누적된 값입니다. 기본 소환은 보너스 판정 RNG를 먼저 소비한 뒤 등급을 판정하고, 보너스 소환은 보너스 판정 없이 바로 등급을 판정합니다.<br>
+          탈것 로직은 업로드한 mount_summon.py의 흐름에 맞춰 전설·궁극·신화는 스탯 2개, 그 외 등급은 스탯 1개로 처리합니다.
+        </div>
         <div class="action-row">
-          <button id="runBtn">계산하기</button>
+          <button id="runBtn">통합 테이블 생성</button>
         </div>
         <div id="error" class="error"></div>
       </section>
@@ -246,12 +190,15 @@
         <div class="column-tools" id="columnTools">
           <label><input type="checkbox" data-col="1" checked /> 소비 Seed</label>
           <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
-          <label><input type="checkbox" data-col="3" checked /> 방식</label>
-          <label><input type="checkbox" data-col="4" checked /> 보너스판정</label>
-          <label><input type="checkbox" data-col="5" checked /> 등급</label>
-          <label><input type="checkbox" data-col="6" checked /> 스탯 1</label>
-          <label><input type="checkbox" data-col="7" checked /> 스탯 2</label>
-          <label><input type="checkbox" data-col="8" checked /> 완성도</label>
+          <label><input type="checkbox" data-col="3" checked /> 보너스판정</label>
+          <label><input type="checkbox" data-col="4" checked /> 기본 ID</label>
+          <label><input type="checkbox" data-col="5" checked /> 기본 등급</label>
+          <label><input type="checkbox" data-col="6" checked /> 기본 스탯</label>
+          <label><input type="checkbox" data-col="7" checked /> 기본 완성도</label>
+          <label><input type="checkbox" data-col="8" checked /> 보너스 ID</label>
+          <label><input type="checkbox" data-col="9" checked /> 보너스 등급</label>
+          <label><input type="checkbox" data-col="10" checked /> 보너스 스탯</label>
+          <label><input type="checkbox" data-col="11" checked /> 보너스 완성도</label>
         </div>
         <div class="table-wrap" style="overflow:auto; max-height: 720px; border-radius: 12px; border: 1px solid var(--line);">
           <table>
@@ -260,12 +207,15 @@
                 <th>#</th>
                 <th>소비 Seed</th>
                 <th>현재 Level/Count</th>
-                <th>방식</th>
                 <th>보너스판정</th>
-                <th>등급</th>
-                <th>스탯 1</th>
-                <th>스탯 2</th>
-                <th>완성도</th>
+                <th>기본 ID</th>
+                <th>기본 등급</th>
+                <th>기본 스탯</th>
+                <th>기본 완성도</th>
+                <th>보너스 ID</th>
+                <th>보너스 등급</th>
+                <th>보너스 스탯</th>
+                <th>보너스 완성도</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -285,6 +235,15 @@
     const RARITIES = ["Common", "Rare", "Epic", "Legendary", "Ultimate", "Mythic"];
     const RARITY_KOR = {
       Common: "일반", Rare: "희귀", Epic: "서사", Legendary: "전설", Ultimate: "궁극", Mythic: "신화"
+    };
+
+    const DEFAULT_MOUNT_IDS = {
+      Common: [0, 1, 2],
+      Rare: [0, 1, 2, 3],
+      Epic: [0, 1],
+      Legendary: [0, 1],
+      Ultimate: [0, 1],
+      Mythic: [0, 1]
     };
 
     const SUBSTATS_INFO = {
@@ -363,31 +322,43 @@
     }
 
     async function loadConfigs() {
-      const eggResp = await fetch('./EggSummonConfig.json');
-      if (!eggResp.ok) throw new Error('EggSummonConfig.json 로드 실패');
-      const eggConfig = await eggResp.json();
-      if (!Array.isArray(eggConfig.Levels) || eggConfig.Levels.length === 0) throw new Error('EggSummonConfig.json의 Levels 배열이 비어 있습니다.');
-
-      let petCounts = { Common: 3, Rare: 4, Epic: 2, Legendary: 2, Ultimate: 2, Mythic: 2 };
+      let summonResp;
       try {
-        const petResp = await fetch('./PetLibrary.json');
-        if (petResp.ok) {
-          const petLib = await petResp.json();
-          const counts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0, Mythic: 0 };
-          const entries = Array.isArray(petLib) ? petLib.map((v, i) => [String(i), v]) : Object.entries(petLib);
-          for (const [key, pet] of entries) {
-            const petId = pet.PetId || pet.EggId || pet.MountId || pet.Id || {};
-            const rarity = petId.Rarity || pet.Rarity || pet.rarity;
-            if (counts[rarity] !== undefined) counts[rarity]++;
-          }
-          for (const rarity of RARITIES) {
-            if (counts[rarity] > 0) petCounts[rarity] = counts[rarity];
+        summonResp = await fetch('./MountSummonConfig.json');
+      } catch (e) {
+        throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
+      }
+      if (!summonResp.ok) throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
+      const summonConfig = await summonResp.json();
+      if (!Array.isArray(summonConfig.Levels) || summonConfig.Levels.length === 0) throw new Error('MountSummonConfig.json의 Levels 배열이 비어 있습니다.');
+
+      const mountsByRarity = { Common: [], Rare: [], Epic: [], Legendary: [], Ultimate: [], Mythic: [] };
+
+      try {
+        const libResp = await fetch('./MountLibrary.json');
+        if (libResp.ok) {
+          const mountLibrary = await libResp.json();
+          const entries = Array.isArray(mountLibrary) ? mountLibrary.map((v, i) => [String(i), v]) : Object.entries(mountLibrary);
+          for (const [key, data] of entries) {
+            const mountId = data.MountId || data.Id || {};
+            const rarity = mountId.Rarity || data.Rarity || data.rarity;
+            if (mountsByRarity[rarity] !== undefined) {
+              mountsByRarity[rarity].push({ key, data, id: mountId.Id ?? data.Id ?? key });
+            }
           }
         }
       } catch (e) {
-        console.warn('PetLibrary.json 로드 실패. 기본 개수 사용');
+        console.warn('MountLibrary.json 로드 실패. 내장 ID 목록을 사용합니다.', e);
       }
-      return { levels: eggConfig.Levels, petCounts };
+
+      for (const rarity of RARITIES) {
+        if (mountsByRarity[rarity].length <= 0) {
+          mountsByRarity[rarity] = DEFAULT_MOUNT_IDS[rarity].map(id => ({ key: String(id), data: {}, id }));
+        }
+        mountsByRarity[rarity].sort((a, b) => Number(a.id) - Number(b.id));
+      }
+
+      return { levels: summonConfig.Levels, mountsByRarity };
     }
 
     function rollRarity(pcg, level, levels) {
@@ -403,7 +374,7 @@
       return { rarity: "Common", lvlData: data };
     }
 
-    function summonOne(seed, level, count, levels, petCounts, mode, extraChancePct) {
+    function summonOne(seed, level, count, levels, mountsByRarity, mode, extraChancePct) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
 
@@ -414,8 +385,9 @@
       }
 
       const { rarity, lvlData } = rollRarity(pcg, level, levels);
-      const countInRarity = Number(petCounts[rarity] || 1);
-      pcg.nextInt(countInRarity);
+      const availableMounts = mountsByRarity[rarity] || [{ key: '-', id: '-' }];
+      const mountIdx = pcg.nextInt(availableMounts.length);
+      const selectedMount = availableMounts[mountIdx] || { key: '-', id: '-' };
       pcg.nextGuid();
 
       const numSubstats = ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
@@ -440,16 +412,15 @@
         nextLevel += 1;
       }
 
-      let displayLevel = level;
-      let displayCount = count + 1;
-
       return {
         seed,
         mode,
-        displayLevel,
-        displayCount,
+        displayLevel: level,
+        displayCount: count + 1,
         bonusTriggered,
         rarity,
+        mountId: selectedMount.id,
+        mountKey: selectedMount.key,
         stats,
         perfection: (f64Sum / numSubstats) * 100,
         nextLevel,
@@ -457,116 +428,104 @@
       };
     }
 
-    function consumePullBatch(batchSize, rows, state) {
-      let totalTargetPulls = batchSize;
-      let currentPullIdx = 0;
-
-      while (currentPullIdx < totalTargetPulls) {
-        const isBonusPull = currentPullIdx >= batchSize;
-        const mode = isBonusPull ? "bonus" : "normal";
-        const r = summonOne(state.currentSeed, state.level, state.count, state.levels, state.petCounts, mode, state.extraChancePct);
-        rows.push(r);
-
-        if (!isBonusPull && r.bonusTriggered) {
-          totalTargetPulls += 1;
-        }
-
-        state.currentSeed = (state.currentSeed + 1n) & U64_MASK;
-        state.level = r.nextLevel;
-        state.count = r.nextCount;
-        currentPullIdx += 1;
-      }
+    function statText(stats) {
+      if (!stats || !stats.length) return '-';
+      return stats.map(s => `${SUBSTAT_KOR[s.name] || s.name} +${s.value.toFixed(2)}%`).join('<br>');
     }
 
-    async function simulate() {
+    function statTextPlain(stats) {
+      if (!stats || !stats.length) return '-';
+      return stats.map(s => `${SUBSTAT_KOR[s.name] || s.name} +${s.value.toFixed(2)}%`).join(' / ');
+    }
+
+    async function scan() {
       const errorEl = document.getElementById('error');
       errorEl.textContent = '';
       try {
-        const { levels, petCounts } = await loadConfigs();
+        const { levels, mountsByRarity } = await loadConfigs();
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
         const extraChancePct = Number(document.getElementById('extraChance').value || 0);
-        const batchSize = Number(document.getElementById('pullType').value);
-        let repeatCount = Number(document.getElementById('pullRepeat').value);
-        if (!Number.isInteger(repeatCount) || repeatCount < 1) repeatCount = 1;
-        const repeatLimits = { 1: 100, 15: 30, 50: 10 };
-        const maxRepeat = repeatLimits[batchSize] || 100;
-        if (repeatCount > maxRepeat) repeatCount = maxRepeat;
-        document.getElementById('pullRepeat').max = maxRepeat;
-        document.getElementById('pullRepeat').value = repeatCount;
-        const selectedMode = document.getElementById('mode').value;
+        let scanCount = Number(document.getElementById('scanCount').value);
+
+        if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) {
+          throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
+        }
+        if (!Number.isInteger(scanCount) || scanCount < 1) scanCount = 1;
+        if (scanCount > 500) scanCount = 500;
+        document.getElementById('scanCount').value = scanCount;
 
         const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);
         const startCount = Number(stateVal & 0xFFFFFFFFn);
         const rows = [];
-        const state = {
-          currentSeed: initialSeed,
-          level: startLevel,
-          count: startCount,
-          levels,
-          petCounts,
-          extraChancePct
-        };
 
-        if (selectedMode === 'normalOnly' || selectedMode === 'bonusOnly') {
-          const mode = selectedMode === 'normalOnly' ? 'normal' : 'bonus';
-          const totalPulls = batchSize * repeatCount;
-          for (let i = 0; i < totalPulls; i++) {
-            const r = summonOne(state.currentSeed, state.level, state.count, levels, petCounts, mode, extraChancePct);
-            rows.push(r);
-            state.currentSeed = (state.currentSeed + 1n) & U64_MASK;
-            state.level = r.nextLevel;
-            state.count = r.nextCount;
-          }
-        } else {
-          for (let i = 0; i < repeatCount; i++) {
-            consumePullBatch(batchSize, rows, state);
-          }
+        let level = startLevel;
+        let count = startCount;
+        for (let i = 0; i < scanCount; i++) {
+          const seed = (initialSeed + BigInt(i)) & U64_MASK;
+          const normal = summonOne(seed, level, count, levels, mountsByRarity, 'normal', extraChancePct);
+          const bonus = summonOne(seed, level, count, levels, mountsByRarity, 'bonus', extraChancePct);
+
+          rows.push({
+            no: i + 1,
+            seed,
+            displayLevel: level,
+            displayCount: count + 1,
+            bonusTriggered: normal.bonusTriggered,
+            normal,
+            bonus
+          });
+
+          level = normal.nextLevel;
+          count = normal.nextCount;
         }
 
-        render(rows, initialSeed, state.currentSeed, startLevel, startCount, state.level, state.count);
+        render(rows, initialSeed, startLevel, startCount, level, count);
       } catch (err) {
-        errorEl.textContent = err.message || String(err);
+        const msg = err.message || String(err);
+        errorEl.textContent = msg;
+        document.getElementById('summary').innerHTML = `<div class="mini"><div class="k">오류</div><div class="v">${msg}</div></div>`;
+        document.getElementById('tbody').innerHTML = '';
       }
     }
 
     let lastRows = [];
     let filteredRows = [];
-    
 
-    function render(rows, startSeed, endSeed, startLevel, startCount, endLevel, endCount) {
+    function render(rows, startSeed, startLevel, startCount, endLevel, endCount) {
       lastRows = rows;
       filteredRows = rows;
-      
-      const bonusCount = rows.filter(r => r.mode === 'bonus').length;
+
+      const bonusHits = rows.filter(r => r.bonusTriggered).length;
       document.getElementById('summary').innerHTML = `
         <div class="mini"><div class="k">시작 Seed</div><div class="v code">${hex64(startSeed)}</div></div>
-        <div class="mini"><div class="k">다음 Seed</div><div class="v code">${hex64(endSeed)}</div></div>
         <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1} / ${startCount} → Lv ${endLevel + 1} / ${endCount}</div></div>
-        <div class="mini"><div class="k">총 결과</div><div class="v">${rows.length}개 <span class="bonus">(+${bonusCount})</span></div></div>
+        <div class="mini"><div class="k">비교 Seed</div><div class="v">${rows.length}개</div></div>
+        <div class="mini"><div class="k">보너스 발동</div><div class="v"><span class="bonus">${bonusHits}개</span></div></div>
       `;
 
       renderTableRows(filteredRows);
     }
 
     function rowToDisplay(r, idx) {
-      const stat1 = r.stats[0] ? `${SUBSTAT_KOR[r.stats[0].name] || r.stats[0].name} +${r.stats[0].value.toFixed(2)}%` : '-';
-      const stat2 = r.stats[1] ? `${SUBSTAT_KOR[r.stats[1].name] || r.stats[1].name} +${r.stats[1].value.toFixed(2)}%` : '-';
-      const bonusText = r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략';
-      const modeText = r.mode === 'normal' ? '기본' : '추가';
-      const rarityText = RARITY_KOR[r.rarity];
       return {
         no: idx + 1,
         seed: hex64(r.seed),
         level: `Lv ${r.displayLevel + 1}`,
         count: `Count ${r.displayCount}`,
-        mode: modeText,
-        bonus: bonusText,
-        rarity: rarityText,
-        rarityKey: r.rarity,
-        stat1,
-        stat2,
-        perfection: `${r.perfection.toFixed(1)}%`
+        bonus: r.bonusTriggered ? '발동' : '-',
+        normalId: String(r.normal.mountId),
+        normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,
+        normalRarityKey: r.normal.rarity,
+        normalStats: statText(r.normal.stats),
+        normalStatsPlain: statTextPlain(r.normal.stats),
+        normalPerfection: `${r.normal.perfection.toFixed(1)}%`,
+        bonusId: String(r.bonus.mountId),
+        bonusRarity: RARITY_KOR[r.bonus.rarity] || r.bonus.rarity,
+        bonusRarityKey: r.bonus.rarity,
+        bonusStats: statText(r.bonus.stats),
+        bonusStatsPlain: statTextPlain(r.bonus.stats),
+        bonusPerfection: `${r.bonus.perfection.toFixed(1)}%`
       };
     }
 
@@ -578,19 +537,20 @@
             <td>${d.no}</td>
             <td class="code">${d.seed}</td>
             <td>${d.level}<br>${d.count}</td>
-            <td>${d.mode === '기본' ? '기본' : '<span class="bonus">추가</span>'}</td>
-            <td>${d.bonus}</td>
-            <td class="rarity-${d.rarityKey}"><b>${d.rarity}</b></td>
-            <td>${d.stat1}</td>
-            <td>${d.stat2}</td>
-            <td>${d.perfection}</td>
+            <td>${d.bonus === '발동' ? '<span class="bonus">발동</span>' : '-'}</td>
+            <td class="code">${d.normalId}</td>
+            <td class="rarity-${d.normalRarityKey}"><b>${d.normalRarity}</b></td>
+            <td>${d.normalStats}</td>
+            <td>${d.normalPerfection}</td>
+            <td class="code">${d.bonusId}</td>
+            <td class="rarity-${d.bonusRarityKey}"><b>${d.bonusRarity}</b></td>
+            <td>${d.bonusStats}</td>
+            <td>${d.bonusPerfection}</td>
           </tr>
         `;
       }).join('');
       applyColumnVisibility();
     }
-
-    
 
     function applySearch() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -600,7 +560,7 @@
       } else {
         filteredRows = lastRows.filter((r, idx) => {
           const d = rowToDisplay(r, idx);
-          return Object.values(d).some(v => String(v).toLowerCase().includes(q));
+          return Object.values(d).some(v => String(v).replace(/<br>/g, ' ').toLowerCase().includes(q));
         });
       }
 
@@ -636,7 +596,7 @@
         return;
       }
 
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '방식', '보너스판정', '등급', '스탯 1', '스탯 2', '완성도'];
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '보너스판정', '기본 ID', '기본 등급', '기본 스탯', '기본 완성도', '보너스 ID', '보너스 등급', '보너스 스탯', '보너스 완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -653,7 +613,7 @@
 
       exportRows.forEach((r, idx) => {
         const d = rowToDisplay(r, idx);
-        const allValues = [d.no, d.seed, d.level, d.count, d.mode, d.bonus, d.rarity, d.stat1, d.stat2, d.perfection];
+        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalId, d.normalRarity, d.normalStatsPlain, d.normalPerfection, d.bonusId, d.bonusRarity, d.bonusStatsPlain, d.bonusPerfection];
         lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
       });
 
@@ -662,34 +622,22 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `pet_summon_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+      a.download = `mount_table_compare_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
 
-    function updateRepeatLimitHint() {
-      const batchSize = Number(document.getElementById('pullType').value);
-      const repeatLimits = { 1: 100, 15: 30, 50: 10 };
-      const maxRepeat = repeatLimits[batchSize] || 100;
-      const input = document.getElementById('pullRepeat');
-      input.max = maxRepeat;
-      if (Number(input.value) > maxRepeat) input.value = maxRepeat;
-    }
-
-    document.getElementById('runBtn').addEventListener('click', simulate);
+    document.getElementById('runBtn').addEventListener('click', scan);
     document.getElementById('csvBtn').addEventListener('click', downloadCsv);
     document.getElementById('searchBtn').addEventListener('click', applySearch);
     document.getElementById('searchInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') applySearch();
     });
-    document.getElementById('pullType').addEventListener('change', updateRepeatLimitHint);
-    
     document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', applyColumnVisibility);
     });
-    updateRepeatLimitHint();
   </script>
 </body>
 </html>
