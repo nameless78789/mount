@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시드 변화 역산 계산기</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--card2:#020617;--text:#e5e7eb;--muted:#9ca3af;--line:#374151;--accent:#2563eb;--accent2:#1d4ed8;--danger:#f87171;--ok:#34d399;--radius:18px;}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5}.wrap{max-width:980px;margin:0 auto;padding:28px 16px 56px}h1{margin:0 0 8px;font-size:28px;letter-spacing:-.04em}.desc{margin:0 0 20px;color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}h2{margin:0 0 16px;font-size:18px}.type-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}.type-tabs button{height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--muted);font-weight:900;cursor:pointer}.type-tabs button.active{background:var(--accent);border-color:var(--accent);color:white}.field{margin-bottom:14px}label{display:block;margin-bottom:6px;font-size:13px;font-weight:800;color:#cbd5e1}input{width:100%;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:0 13px;font-size:16px;outline:none}input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.25)}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:12px;color:var(--muted);margin-top:6px}.error{display:none;margin-top:12px;color:var(--danger);font-weight:900}.result{display:grid;gap:10px}.box{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:14px}.name{font-size:12px;color:var(--muted);font-weight:900;margin-bottom:6px}.value{font-size:22px;font-weight:950;word-break:break-all}.value.small{font-size:18px}.ok{color:var(--ok)}.btn{width:100%;height:48px;border:0;border-radius:15px;background:linear-gradient(135deg,var(--accent),#4f46e5);color:white;font-size:15px;font-weight:950;cursor:pointer;margin-top:6px}@media(max-width:800px){.grid{grid-template-columns:1fr}.wrap{padding-top:22px}h1{font-size:24px}.value{font-size:20px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>시드 변화 역산 계산기</h1>
+    <p class="desc">과거 Seed와 Level/Count State를 기준으로 현재 게임 화면의 Level, Count까지 진행한 소환 수와 현재 Seed를 계산합니다.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>입력</h2>
+        <div class="type-tabs">
+          <button id="eggBtn" class="active" onclick="setType('egg')">펫 / 알</button>
+          <button id="mountBtn" onclick="setType('mount')">탈것</button>
+        </div>
+
+        <div class="field">
+          <label for="oldSeed">과거 상태 Seed (HEX16)</label>
+          <input id="oldSeed" placeholder="HEX16 입력" spellcheck="false" autocomplete="off" onpaste="handleSeedPaste(event)">
+        </div>
+
+        <div class="field">
+          <label for="oldStateHex">과거 Level/Count State (HEX16)</label>
+          <input id="oldStateHex" placeholder="HEX16 입력" spellcheck="false" autocomplete="off">
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="newLevel">현재 게임 화면 Level</label>
+            <input id="newLevel" type="number" placeholder="Level 입력" min="1" step="1">
+          </div>
+          <div class="field">
+            <label for="newCount">현재 게임 화면 Count</label>
+            <input id="newCount" type="number" placeholder="Count 입력" min="0" step="1">
+          </div>
+        </div>
+
+        <button class="btn" onclick="calculate()">계산하기</button>
+        <div id="error" class="error"></div>
+      </section>
+
+      <section class="card">
+        <h2>결과</h2>
+        <div class="result">
+          <div class="box"><div class="name">과거 Level / Count</div><div id="oldDisplay" class="value">-</div></div>
+          <div class="box"><div class="name">현재 Level / Count</div><div id="newDisplay" class="value">-</div></div>
+          <div class="box"><div class="name">증가량</div><div id="increase" class="value ok">-</div></div>
+          <div class="box"><div class="name">현재 Seed</div><div id="currentSeed" class="value">-</div></div>
+          <div class="box"><div class="name">현재 Level/Count State (HEX16)</div><div id="currentState" class="value small">-</div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const U64_MASK = (1n << 64n) - 1n;
+    let summonType = 'egg';
+    const levelsCache = new Map();
+    const $ = function(id){ return document.getElementById(id); };
+
+    function handleSeedPaste(event){
+      const text = (event.clipboardData || window.clipboardData).getData('text');
+      const parts = text.split(new RegExp('[\\r\\n\\t]+')).map(function(v){ return v.trim(); }).filter(Boolean);
+      if(parts.length >= 2){
+        event.preventDefault();
+        $('oldSeed').value = parts[0];
+        $('oldStateHex').value = parts[1];
+        calculate();
+      }
+    }
+
+    function setType(type){
+      summonType = type;
+      $('eggBtn').classList.toggle('active', type === 'egg');
+      $('mountBtn').classList.toggle('active', type === 'mount');
+      calculate();
+    }
+
+    function configFileName(){ return summonType === 'mount' ? 'MountSummonConfig.json' : 'EggSummonConfig.json'; }
+    function typeLabel(){ return summonType === 'mount' ? '탈것' : '펫/알'; }
+
+    async function loadLevels(){
+      const file = configFileName();
+      if(levelsCache.has(file)) return levelsCache.get(file);
+      const resp = await fetch('./' + file);
+      if(!resp.ok) throw new Error(file + ' 로드 실패. HTML과 같은 폴더에 ' + file + '을 두세요.');
+      const config = await resp.json();
+      if(!Array.isArray(config.Levels) || config.Levels.length === 0) throw new Error(file + '의 Levels 배열을 찾을 수 없습니다.');
+      levelsCache.set(file, config.Levels);
+      return config.Levels;
+    }
+
+    function cleanHex(value, label){
+      const s = String(value || '').trim().replace(/^0x/i, '').toUpperCase();
+      if(!s || s.length > 16) throw new Error(label + '은 1~16자리 HEX 값이어야 합니다.');
+      for(const ch of s){ if(!'0123456789ABCDEF'.includes(ch)) throw new Error(label + '은 0~9, A~F만 입력할 수 있습니다.'); }
+      return s;
+    }
+
+    function parseHex(value, label){ return BigInt('0x' + cleanHex(value, label)); }
+    function hex64(n){ return (n & U64_MASK).toString(16).toUpperCase().padStart(16, '0'); }
+    function hex32(n){ return Number(n).toString(16).toUpperCase().padStart(8, '0'); }
+
+    function readInt(id, label){
+      const n = Number($(id).value);
+      if(!Number.isFinite(n) || !Number.isInteger(n)) throw new Error(label + '은 정수로 입력하세요.');
+      return n;
+    }
+
+    function getRequired(levels, internalLevel){
+      const idx = Math.min(Math.max(internalLevel, 0), levels.length - 1);
+      const required = Number(levels[idx].SummonsRequired || 0);
+      if(!Number.isFinite(required) || required < 1) throw new Error('Lv ' + (internalLevel + 1) + '의 SummonsRequired 값이 올바르지 않습니다.');
+      return required;
+    }
+
+    function parseStateHex(hex){
+      const v = parseHex(hex, 'Level/Count State');
+      const level = Number((v >> 32n) & 0xFFFFFFFFn);
+      const count = Number(v & 0xFFFFFFFFn);
+      return { level, count };
+    }
+
+    function makeStateHex(displayLevel, displayCount){
+      const internalLevel = displayLevel - 1;
+      return hex32(internalLevel) + hex32(displayCount);
+    }
+
+    function validateGameState(name, displayLevel, displayCount, levels){
+      if(displayLevel < 1) throw new Error(name + ' Level은 1 이상이어야 합니다.');
+      if(displayCount < 0) throw new Error(name + ' Count는 0 이상이어야 합니다.');
+      const internalLevel = displayLevel - 1;
+      const required = getRequired(levels, internalLevel);
+      if(displayCount >= required) throw new Error(name + ' Count는 0~' + (required - 1) + ' 범위여야 합니다. ' + required + '/' + required + ' 상태는 다음 레벨 0/' + getRequired(levels, internalLevel + 1) + '로 넘어간 뒤입니다.');
+      return { level: internalLevel, count: displayCount, required };
+    }
+
+    function distance(oldState, newState, levels){
+      if(newState.level < oldState.level || (newState.level === oldState.level && newState.count < oldState.count)) throw new Error('현재 상태가 과거 상태보다 앞에 있습니다.');
+      let level = oldState.level;
+      let count = oldState.count;
+      let total = 0n;
+      while(level < newState.level){
+        const required = getRequired(levels, level);
+        total += BigInt(required - count);
+        level += 1;
+        count = 0;
+      }
+      total += BigInt(newState.count - count);
+      return total;
+    }
+
+    async function calculate(){
+      $('error').style.display = 'none';
+      $('error').textContent = '';
+      try{
+        const levels = await loadLevels();
+        const oldSeed = parseHex($('oldSeed').value, 'Seed');
+        const oldRaw = parseStateHex($('oldStateHex').value);
+        const oldDisplayLevel = oldRaw.level + 1;
+        const oldDisplayCount = oldRaw.count;
+        const newDisplayLevel = readInt('newLevel', '현재 Level');
+        const newDisplayCount = readInt('newCount', '현재 Count');
+
+        const oldState = validateGameState('과거 상태', oldDisplayLevel, oldDisplayCount, levels);
+        const newState = validateGameState('현재 상태', newDisplayLevel, newDisplayCount, levels);
+        const inc = distance(oldState, newState, levels);
+        const currentSeed = oldSeed + inc;
+        const currentStateHex = makeStateHex(newDisplayLevel, newDisplayCount);
+
+        $('oldDisplay').textContent = 'Lv ' + oldDisplayLevel + ' / ' + oldDisplayCount + '/' + oldState.required;
+        $('newDisplay').textContent = 'Lv ' + newDisplayLevel + ' / ' + newDisplayCount + '/' + newState.required;
+        $('increase').textContent = inc.toString() + '회';
+        $('currentSeed').textContent = hex64(currentSeed);
+        $('currentState').textContent = currentStateHex;
+      }catch(e){
+        $('error').textContent = e.message;
+        $('error').style.display = 'block';
+      }
+    }
+
+    document.querySelectorAll('input').forEach(function(el){ el.addEventListener('input', calculate); });
+  </script>
+</body>
+</html>
