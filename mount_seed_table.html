@@ -36,7 +36,7 @@
       box-shadow: 0 14px 40px rgba(0,0,0,0.35);
     }
     label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, button {
+    input, select, button {
       width: 100%;
       border-radius: 10px;
       border: 1px solid var(--line);
@@ -57,7 +57,7 @@
       background: var(--panel2);
       border: 1px solid var(--line);
     }
-    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
     .action-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .action-row button { font-size: 16px; padding: 13px 14px; }
     .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
@@ -127,7 +127,7 @@
       .row { grid-template-columns: 1fr; gap: 6px; }
       .search-tools { grid-template-columns: 1fr; }
       label { font-size: 11px; }
-      input, button { font-size: 12px; padding: 8px 6px; }
+      input, select, button { font-size: 12px; padding: 8px 6px; }
       .summary { grid-template-columns: 1fr; }
       th, td { font-size: 12px; padding: 8px 6px; }
     }
@@ -160,10 +160,18 @@
             <label>비교할 Seed 개수</label>
             <input id="scanCount" type="number" min="1" max="500" step="1" value="50" />
           </div>
+          <div>
+            <label>승천 여부</label>
+            <select id="ascended">
+              <option value="false" selected>기본 상태</option>
+              <option value="true">승천 상태</option>
+            </select>
+          </div>
         </div>
         <div class="hint">
           Level/Count는 직전까지 누적된 값입니다. 기본 소환은 보너스 판정 RNG를 먼저 소비한 뒤 등급을 판정하고, 보너스 소환은 보너스 판정 없이 바로 등급을 판정합니다.<br>
-          탈것 로직은 업로드한 mount_summon.py의 흐름에 맞춰 전설·궁극·신화는 스탯 2개, 그 외 등급은 스탯 1개로 처리합니다.
+          탈것 로직은 업로드한 mount_summon.py의 흐름에 맞춰 전설·궁극·신화는 스탯 2개, 그 외 등급은 스탯 1개로 처리합니다.<br>
+          승천 상태에서는 등급과 관계없이 모든 탈것의 스탯을 2개로 계산합니다.
         </div>
         <div class="action-row">
           <button id="runBtn">통합 테이블 생성</button>
@@ -235,6 +243,15 @@
     const RARITIES = ["Common", "Rare", "Epic", "Legendary", "Ultimate", "Mythic"];
     const RARITY_KOR = {
       Common: "일반", Rare: "희귀", Epic: "서사", Legendary: "전설", Ultimate: "궁극", Mythic: "신화"
+    };
+
+    const DEFAULT_MOUNT_IDS = {
+      Common: [0, 1, 2],
+      Rare: [0, 1, 2, 3],
+      Epic: [0, 1],
+      Legendary: [0, 1],
+      Ultimate: [0, 1],
+      Mythic: [0, 1]
     };
 
     const SUBSTATS_INFO = {
@@ -313,29 +330,40 @@
     }
 
     async function loadConfigs() {
-      const summonResp = await fetch('./MountSummonConfig.json');
-      if (!summonResp.ok) throw new Error('MountSummonConfig.json 로드 실패');
+      let summonResp;
+      try {
+        summonResp = await fetch('./MountSummonConfig.json');
+      } catch (e) {
+        throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
+      }
+      if (!summonResp.ok) throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
       const summonConfig = await summonResp.json();
       if (!Array.isArray(summonConfig.Levels) || summonConfig.Levels.length === 0) throw new Error('MountSummonConfig.json의 Levels 배열이 비어 있습니다.');
 
-      const libResp = await fetch('./MountLibrary.json');
-      if (!libResp.ok) throw new Error('MountLibrary.json 로드 실패');
-      const mountLibrary = await libResp.json();
-
       const mountsByRarity = { Common: [], Rare: [], Epic: [], Legendary: [], Ultimate: [], Mythic: [] };
-      const entries = Array.isArray(mountLibrary) ? mountLibrary.map((v, i) => [String(i), v]) : Object.entries(mountLibrary);
-      for (const [key, data] of entries) {
-        const mountId = data.MountId || data.Id || {};
-        const rarity = mountId.Rarity || data.Rarity || data.rarity;
-        if (mountsByRarity[rarity] !== undefined) {
-          mountsByRarity[rarity].push({ key, data, id: mountId.Id ?? data.Id ?? key });
+
+      try {
+        const libResp = await fetch('./MountLibrary.json');
+        if (libResp.ok) {
+          const mountLibrary = await libResp.json();
+          const entries = Array.isArray(mountLibrary) ? mountLibrary.map((v, i) => [String(i), v]) : Object.entries(mountLibrary);
+          for (const [key, data] of entries) {
+            const mountId = data.MountId || data.Id || {};
+            const rarity = mountId.Rarity || data.Rarity || data.rarity;
+            if (mountsByRarity[rarity] !== undefined) {
+              mountsByRarity[rarity].push({ key, data, id: mountId.Id ?? data.Id ?? key });
+            }
+          }
         }
+      } catch (e) {
+        console.warn('MountLibrary.json 로드 실패. 내장 ID 목록을 사용합니다.', e);
       }
+
       for (const rarity of RARITIES) {
-        mountsByRarity[rarity].sort((a, b) => Number(a.id) - Number(b.id));
         if (mountsByRarity[rarity].length <= 0) {
-          mountsByRarity[rarity].push({ key: '-', data: {}, id: '-' });
+          mountsByRarity[rarity] = DEFAULT_MOUNT_IDS[rarity].map(id => ({ key: String(id), data: {}, id }));
         }
+        mountsByRarity[rarity].sort((a, b) => Number(a.id) - Number(b.id));
       }
 
       return { levels: summonConfig.Levels, mountsByRarity };
@@ -354,7 +382,7 @@
       return { rarity: "Common", lvlData: data };
     }
 
-    function summonOne(seed, level, count, levels, mountsByRarity, mode, extraChancePct) {
+    function summonOne(seed, level, count, levels, mountsByRarity, mode, extraChancePct, ascended) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
 
@@ -370,7 +398,7 @@
       const selectedMount = availableMounts[mountIdx] || { key: '-', id: '-' };
       pcg.nextGuid();
 
-      const numSubstats = ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
+      const numSubstats = ascended ? 2 : (["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1);
       const availableStats = [...SUBSTATS_POOL];
       const stats = [];
       let f64Sum = 0;
@@ -423,10 +451,12 @@
       errorEl.textContent = '';
       try {
         const { levels, mountsByRarity } = await loadConfigs();
+        loadedLevels = levels;
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
         const extraChancePct = Number(document.getElementById('extraChance').value || 0);
         let scanCount = Number(document.getElementById('scanCount').value);
+        const ascended = document.getElementById('ascended').value === 'true';
 
         if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) {
           throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
@@ -443,8 +473,8 @@
         let count = startCount;
         for (let i = 0; i < scanCount; i++) {
           const seed = (initialSeed + BigInt(i)) & U64_MASK;
-          const normal = summonOne(seed, level, count, levels, mountsByRarity, 'normal', extraChancePct);
-          const bonus = summonOne(seed, level, count, levels, mountsByRarity, 'bonus', extraChancePct);
+          const normal = summonOne(seed, level, count, levels, mountsByRarity, 'normal', extraChancePct, ascended);
+          const bonus = summonOne(seed, level, count, levels, mountsByRarity, 'bonus', extraChancePct, ascended);
 
           rows.push({
             no: i + 1,
@@ -462,12 +492,16 @@
 
         render(rows, initialSeed, startLevel, startCount, level, count);
       } catch (err) {
-        errorEl.textContent = err.message || String(err);
+        const msg = err.message || String(err);
+        errorEl.textContent = msg;
+        document.getElementById('summary').innerHTML = `<div class="mini"><div class="k">오류</div><div class="v">${msg}</div></div>`;
+        document.getElementById('tbody').innerHTML = '';
       }
     }
 
     let lastRows = [];
     let filteredRows = [];
+    let loadedLevels = [];
 
     function render(rows, startSeed, startLevel, startCount, endLevel, endCount) {
       lastRows = rows;
@@ -484,13 +518,20 @@
       renderTableRows(filteredRows);
     }
 
+    function getRequiredCount(level) {
+      if (!loadedLevels || !loadedLevels.length) return '-';
+      const idx = Math.min(level + 1, loadedLevels.length - 1);
+      return Number(loadedLevels[idx]?.SummonsRequired || 999999999);
+    }
+
     function rowToDisplay(r, idx) {
       return {
         no: idx + 1,
         seed: hex64(r.seed),
         level: `Lv ${r.displayLevel + 1}`,
-        count: `Count ${r.displayCount}`,
+        count: r.displayCount,
         bonus: r.bonusTriggered ? '발동' : '-',
+        required: getRequiredCount(r.displayLevel),
         normalId: String(r.normal.mountId),
         normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,
         normalRarityKey: r.normal.rarity,
@@ -513,7 +554,7 @@
           <tr>
             <td>${d.no}</td>
             <td class="code">${d.seed}</td>
-            <td>${d.level}<br>${d.count}</td>
+            <td>${d.level}<br>Count ${d.count}/${d.required}</td>
             <td>${d.bonus === '발동' ? '<span class="bonus">발동</span>' : '-'}</td>
             <td class="code">${d.normalId}</td>
             <td class="rarity-${d.normalRarityKey}"><b>${d.normalRarity}</b></td>
@@ -590,7 +631,7 @@
 
       exportRows.forEach((r, idx) => {
         const d = rowToDisplay(r, idx);
-        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalId, d.normalRarity, d.normalStatsPlain, d.normalPerfection, d.bonusId, d.bonusRarity, d.bonusStatsPlain, d.bonusPerfection];
+        const allValues = [d.no, d.seed, d.level, `Count ${d.count}/${d.required}`, d.bonus, d.normalId, d.normalRarity, d.normalStatsPlain, d.normalPerfection, d.bonusId, d.bonusRarity, d.bonusStatsPlain, d.bonusPerfection];
         lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
       });
 
@@ -606,7 +647,27 @@
       URL.revokeObjectURL(url);
     }
 
+    function extractSeedStateFromText(text) {
+      const hexes = (text || '').replace(/0x/gi, '').match(/[0-9a-fA-F]{16}/g);
+      if (!hexes || hexes.length < 2) return null;
+      return {
+        seed: hexes[0].toUpperCase(),
+        state: hexes[1].toUpperCase()
+      };
+    }
+
+    function handleSeedStatePaste(e) {
+      const pasted = e.clipboardData?.getData('text') || '';
+      const parsed = extractSeedStateFromText(pasted);
+      if (!parsed) return;
+      e.preventDefault();
+      document.getElementById('seed').value = parsed.seed;
+      document.getElementById('state').value = parsed.state;
+    }
+
     document.getElementById('runBtn').addEventListener('click', scan);
+    document.getElementById('seed').addEventListener('paste', handleSeedStatePaste);
+    document.getElementById('state').addEventListener('paste', handleSeedStatePaste);
     document.getElementById('csvBtn').addEventListener('click', downloadCsv);
     document.getElementById('searchBtn').addEventListener('click', applySearch);
     document.getElementById('searchInput').addEventListener('keydown', (e) => {

@@ -36,7 +36,7 @@
       box-shadow: 0 14px 40px rgba(0,0,0,0.35);
     }
     label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, button {
+    input, button, select {
       width: 100%;
       border-radius: 10px;
       border: 1px solid var(--line);
@@ -127,7 +127,7 @@
       .row { grid-template-columns: 1fr; gap: 6px; }
       .search-tools { grid-template-columns: 1fr; }
       label { font-size: 11px; }
-      input, button { font-size: 12px; padding: 8px 6px; }
+      input, button, select { font-size: 12px; padding: 8px 6px; }
       .summary { grid-template-columns: 1fr; }
       th, td { font-size: 12px; padding: 8px 6px; }
     }
@@ -160,10 +160,17 @@
             <label>비교할 Seed 개수</label>
             <input id="scanCount" type="number" min="1" max="500" step="1" value="50" />
           </div>
+          <div>
+            <label>승천 여부</label>
+            <select id="ascended">
+              <option value="false" selected>승천 전</option>
+              <option value="true">승천 후</option>
+            </select>
+          </div>
         </div>
         <div class="hint">
           Level/Count는 직전까지 누적된 값입니다. 기본 소환은 보너스 판정 RNG를 먼저 소비한 뒤 등급을 판정하고, 보너스 소환은 보너스 판정 없이 바로 등급을 판정합니다.<br>
-          펫/알 로직은 전설·궁극·신화는 스탯 2개, 그 외 등급은 스탯 1개로 처리합니다.
+          펫/알 로직은 승천 전에는 전설·궁극·신화만 스탯 2개, 그 외 등급은 스탯 1개로 처리합니다. 승천 후에는 모든 등급을 스탯 2개로 처리합니다.
         </div>
         <div class="action-row">
           <button id="runBtn">통합 테이블 생성</button>
@@ -375,7 +382,20 @@
       return { rarity: "Common", lvlData: data };
     }
 
-    function summonOne(seed, level, count, levels, petsByRarity, mode, extraChancePct) {
+    function getSummonsRequiredForNext(level, levels) {
+      // EggSummonConfig.json의 SummonsRequired는 "전 레벨 → 현재 레벨" 도달 필요횟수 기준입니다.
+      // 화면의 현재 Lv에서 다음 Lv로 넘어가기 위한 분모는 다음 레벨 행(level + 1)의 값을 사용해야 합니다.
+      const nextIdx = Math.min(level + 1, levels.length - 1);
+      const fallbackIdx = Math.min(level, levels.length - 1);
+      return Number(levels[nextIdx]?.SummonsRequired || levels[fallbackIdx]?.SummonsRequired || 999999999);
+    }
+
+    function getSubstatCount(rarity, ascended) {
+      if (ascended) return 2;
+      return ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
+    }
+
+    function summonOne(seed, level, count, levels, petsByRarity, mode, extraChancePct, ascended) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
 
@@ -391,7 +411,7 @@
       const selectedPet = availablePets[petIdx] || { key: '-', id: '-' };
       pcg.nextGuid();
 
-      const numSubstats = ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
+      const numSubstats = getSubstatCount(rarity, ascended);
       const availableStats = [...SUBSTATS_POOL];
       const stats = [];
       let f64Sum = 0;
@@ -407,7 +427,7 @@
 
       let nextLevel = level;
       let nextCount = count + 1;
-      const required = Number(lvlData.SummonsRequired || 999999999);
+      const required = getSummonsRequiredForNext(level, levels);
       if (nextCount >= required) {
         nextCount -= required;
         nextLevel += 1;
@@ -439,6 +459,14 @@
       return stats.map(s => `${SUBSTAT_KOR[s.name] || s.name} +${s.value.toFixed(2)}%`).join(' / ');
     }
 
+    function stateText(level, count, required) {
+      return `Lv ${level + 1}<br>${count}/${required || '-'}`;
+    }
+
+    function stateTextPlain(level, count, required) {
+      return `Lv ${level + 1} ${count}/${required || '-'}`;
+    }
+
     async function scan() {
       const errorEl = document.getElementById('error');
       errorEl.textContent = '';
@@ -447,6 +475,7 @@
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
         const extraChancePct = Number(document.getElementById('extraChance').value || 0);
+        const ascended = document.getElementById('ascended').value === 'true';
         let scanCount = Number(document.getElementById('scanCount').value);
 
         if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) {
@@ -464,14 +493,15 @@
         let count = startCount;
         for (let i = 0; i < scanCount; i++) {
           const seed = (initialSeed + BigInt(i)) & U64_MASK;
-          const normal = summonOne(seed, level, count, levels, petsByRarity, 'normal', extraChancePct);
-          const bonus = summonOne(seed, level, count, levels, petsByRarity, 'bonus', extraChancePct);
+          const normal = summonOne(seed, level, count, levels, petsByRarity, 'normal', extraChancePct, ascended);
+          const bonus = summonOne(seed, level, count, levels, petsByRarity, 'bonus', extraChancePct, ascended);
 
           rows.push({
             no: i + 1,
             seed,
             displayLevel: level,
             displayCount: count + 1,
+            required: getSummonsRequiredForNext(level, levels),
             bonusTriggered: normal.bonusTriggered,
             normal,
             bonus
@@ -481,7 +511,7 @@
           count = normal.nextCount;
         }
 
-        render(rows, initialSeed, startLevel, startCount, level, count);
+        render(rows, initialSeed, startLevel, startCount, level, count, ascended, levels);
       } catch (err) {
         const msg = err.message || String(err);
         errorEl.textContent = msg;
@@ -493,16 +523,17 @@
     let lastRows = [];
     let filteredRows = [];
 
-    function render(rows, startSeed, startLevel, startCount, endLevel, endCount) {
+    function render(rows, startSeed, startLevel, startCount, endLevel, endCount, ascended, levels) {
       lastRows = rows;
       filteredRows = rows;
 
       const bonusHits = rows.filter(r => r.bonusTriggered).length;
       document.getElementById('summary').innerHTML = `
         <div class="mini"><div class="k">시작 Seed</div><div class="v code">${hex64(startSeed)}</div></div>
-        <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1} / ${startCount} → Lv ${endLevel + 1} / ${endCount}</div></div>
+        <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1}<br>${startCount}/${getSummonsRequiredForNext(startLevel, levels)} → Lv ${endLevel + 1}<br>${endCount}/${getSummonsRequiredForNext(endLevel, levels)}</div></div>
         <div class="mini"><div class="k">비교 Seed</div><div class="v">${rows.length}개</div></div>
         <div class="mini"><div class="k">보너스 발동</div><div class="v"><span class="bonus">${bonusHits}개</span></div></div>
+        <div class="mini"><div class="k">승천 여부</div><div class="v">${ascended ? '승천 후' : '승천 전'}</div></div>
       `;
 
       renderTableRows(filteredRows);
@@ -513,7 +544,8 @@
         no: idx + 1,
         seed: hex64(r.seed),
         level: `Lv ${r.displayLevel + 1}`,
-        count: `Count ${r.displayCount}`,
+        count: `${r.displayCount}/${r.required || '-'}`,
+        statePlain: `Lv ${r.displayLevel + 1} ${r.displayCount}/${r.required || '-'}`,
         bonus: r.bonusTriggered ? '발동' : '-',
         normalId: String(r.normal.petId),
         normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,
@@ -597,7 +629,7 @@
         return;
       }
 
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '보너스판정', '기본 Pet ID', '기본 등급', '기본 스탯', '기본 완성도', '보너스 Pet ID', '보너스 등급', '보너스 스탯', '보너스 완성도'];
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 Pet ID', '기본 등급', '기본 스탯', '기본 완성도', '보너스 Pet ID', '보너스 등급', '보너스 스탯', '보너스 완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -630,6 +662,27 @@
       URL.revokeObjectURL(url);
     }
 
+    function extractHexTokens(text) {
+      return String(text || '').match(/[0-9a-fA-F]{1,16}/g) || [];
+    }
+
+    function installSeedStatePasteSplit() {
+      const seedEl = document.getElementById('seed');
+      const stateEl = document.getElementById('state');
+      const handler = (e) => {
+        const text = e.clipboardData?.getData('text') || '';
+        const tokens = extractHexTokens(text);
+        if (tokens.length >= 2) {
+          e.preventDefault();
+          seedEl.value = tokens[0].toUpperCase();
+          stateEl.value = tokens[1].toUpperCase();
+        }
+      };
+      seedEl.addEventListener('paste', handler);
+      stateEl.addEventListener('paste', handler);
+    }
+
+    installSeedStatePasteSplit();
     document.getElementById('runBtn').addEventListener('click', scan);
     document.getElementById('csvBtn').addEventListener('click', downloadCsv);
     document.getElementById('searchBtn').addEventListener('click', applySearch);

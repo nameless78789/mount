@@ -37,7 +37,7 @@
       margin-bottom: 16px;
     }
     label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, button {
+    input, button, select {
       width: 100%;
       border-radius: 10px;
       border: 1px solid var(--line);
@@ -155,7 +155,7 @@
       .row, .tools { grid-template-columns: 1fr; }
       .summary { grid-template-columns: 1fr; }
       label { font-size: 11px; }
-      input, button { font-size: 12px; padding: 8px 6px; }
+      input, button, select { font-size: 12px; padding: 8px 6px; }
       th, td { font-size: 12px; padding: 8px 6px; }
     }
   </style>
@@ -185,6 +185,13 @@
         <div>
           <label>사용할 기본 뽑기 자원</label>
           <input id="resourceCount" type="number" min="1" max="500" step="1" value="100" />
+        </div>
+        <div>
+          <label>승천 여부</label>
+          <select id="ascended">
+            <option value="false" selected>승천 전</option>
+            <option value="true">승천 후</option>
+          </select>
         </div>
       </div>
 
@@ -373,8 +380,8 @@
             if (petsByRarity[rarity] !== undefined) {
               const id = Number(petId.Id ?? pet.Id ?? key);
               const type = pet.Type || pet.type || '';
-              const name = PET_NAMES[rarity]?.[id] || pet.Name || pet.name || pet.DisplayName || `펫 ${id}`;
               const typeKor = TYPE_KOR[type] || type;
+              const name = PET_NAMES[rarity]?.[id] || pet.Name || pet.name || pet.DisplayName || `펫 ${id}`;
               petsByRarity[rarity].push({ key, id, type, typeKor, name, data: pet });
             }
           }
@@ -425,7 +432,20 @@
       return { rarity: "Common", lvlData: data };
     }
 
-    function summonDetail(seed, level, count, levels, petsByRarity, mode, extraChancePct, batchSize) {
+    function getSummonsRequiredForNext(level, levels) {
+      // EggSummonConfig.json의 SummonsRequired는 "전 레벨 → 현재 레벨" 도달 필요횟수 기준입니다.
+      // 현재 Lv에서 다음 Lv로 넘어가기 위한 분모는 다음 레벨 행(level + 1)의 값을 사용합니다.
+      const nextIdx = Math.min(level + 1, levels.length - 1);
+      const fallbackIdx = Math.min(level, levels.length - 1);
+      return Number(levels[nextIdx]?.SummonsRequired || levels[fallbackIdx]?.SummonsRequired || 999999999);
+    }
+
+    function getSubstatCount(rarity, ascended) {
+      if (ascended) return 2;
+      return ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
+    }
+
+    function summonDetail(seed, level, count, levels, petsByRarity, mode, extraChancePct, batchSize, ascended) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
       if (mode === 'normal') {
@@ -440,7 +460,7 @@
       const selectedPet = petList[petIdx] || { id: '-', type: '', typeKor: '', name: '-' };
       pcg.nextGuid();
 
-      const numSubstats = ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
+      const numSubstats = getSubstatCount(rarity, ascended);
       const availableStats = [...SUBSTATS_POOL];
       const stats = [];
       for (let i = 0; i < numSubstats; i++) {
@@ -453,7 +473,7 @@
 
       let nextLevel = level;
       let nextCount = count + 1;
-      const required = Number(lvlData.SummonsRequired || 999999999);
+      const required = getSummonsRequiredForNext(level, levels);
       if (nextCount >= required) {
         nextCount -= required;
         nextLevel += 1;
@@ -466,6 +486,7 @@
         batchSize,
         displayLevel: level,
         displayCount: count + 1,
+        displayRequired: required,
         mode,
         bonusTriggered,
         rarity,
@@ -490,21 +511,21 @@
       return stats.map(s => `${SUBSTAT_KOR[s.name] || s.name} +${s.value.toFixed(2)}%`).join(' / ');
     }
 
-    function buildDetailRows(best, initialSeed, startLevel, startCount, levels, petsByRarity, extraChancePct) {
+    function buildDetailRows(best, initialSeed, startLevel, startCount, levels, petsByRarity, extraChancePct, ascended) {
       const rows = [];
       let level = startLevel;
       let count = startCount;
       for (const step of best.route) {
         for (let i = 0; i < step.batchSize; i++) {
           const seed = step.baseStart + BigInt(i);
-          const r = summonDetail(seed, level, count, levels, petsByRarity, 'normal', extraChancePct, step.batchSize);
+          const r = summonDetail(seed, level, count, levels, petsByRarity, 'normal', extraChancePct, step.batchSize, ascended);
           rows.push(r);
           level = r.nextLevel;
           count = r.nextCount;
         }
         for (let i = 0; i < step.bonusCount; i++) {
           const seed = step.bonusStart + BigInt(i);
-          const r = summonDetail(seed, level, count, levels, petsByRarity, 'bonus', extraChancePct, step.batchSize);
+          const r = summonDetail(seed, level, count, levels, petsByRarity, 'bonus', extraChancePct, step.batchSize, ascended);
           rows.push(r);
           level = r.nextLevel;
           count = r.nextCount;
@@ -521,11 +542,11 @@
         `${r.batchSize}뽑`,
         hex64(r.seed),
         `Lv ${r.displayLevel + 1}`,
-        `Count ${r.displayCount}`,
+        `${r.displayCount}/${r.displayRequired || getSummonsRequiredForNext(r.displayLevel, window.__lastLevels || []) || "-"}`,
         r.mode === 'normal' ? '기본' : '추가',
         r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
         RARITY_KOR[r.rarity] || r.rarity,
-        `${r.petName}${r.petTypeKor ? ' / ' + r.petTypeKor : ''}`,
+        r.petName,
         statTextPlain(r.stats),
         `${r.perfection.toFixed(1)}%`
       ].join(' ').toLowerCase();
@@ -546,7 +567,7 @@
       let nextCount = count;
       for (let i = 0; i < steps; i++) {
         const lvlIdx = Math.min(nextLevel, levels.length - 1);
-        const required = Number(levels[lvlIdx].SummonsRequired || 999999999);
+        const required = getSummonsRequiredForNext(nextLevel, levels);
         nextCount += 1;
         if (nextCount >= required) {
           nextCount -= required;
@@ -644,6 +665,7 @@
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
         const extraChancePct = Number(document.getElementById('extraChance').value || 0);
+        const ascended = document.getElementById('ascended').value === 'true';
         let resourceCount = Number(document.getElementById('resourceCount').value);
         const batchOptions = Array.from(document.querySelectorAll('.batchOpt:checked')).map(el => Number(el.value)).sort((a, b) => b - a);
 
@@ -660,7 +682,7 @@
 
         lastBest = result.best;
         lastInitialSeed = initialSeed;
-        render(result.best, initialSeed, startLevel, startCount, resourceCount, result.stateCount, levels, petsByRarity, extraChancePct);
+        render(result.best, initialSeed, startLevel, startCount, resourceCount, result.stateCount, levels, petsByRarity, extraChancePct, ascended);
       } catch (err) {
         const msg = err.message || String(err);
         errorEl.textContent = msg;
@@ -670,18 +692,19 @@
       }
     }
 
-    function render(best, initialSeed, startLevel, startCount, resourceCount, stateCount, levels, petsByRarity, extraChancePct) {
+    function render(best, initialSeed, startLevel, startCount, resourceCount, stateCount, levels, petsByRarity, extraChancePct, ascended) {
+      window.__lastLevels = levels;
       document.getElementById('summary').innerHTML = `
         <div class="mini"><div class="k">기본 자원</div><div class="v">${resourceCount}개</div></div>
         <div class="mini"><div class="k">최대 보너스</div><div class="v"><span class="bonus">${best.bonus}개</span></div></div>
         <div class="mini"><div class="k">총 실제 소환</div><div class="v">${best.consumed}개</div></div>
         <div class="mini"><div class="k">최종 Seed</div><div class="v code">${hex64(initialSeed + BigInt(best.consumed))}</div></div>
-        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1} / ${best.finalCount}</div></div>
+        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1}<br>${best.finalCount}/${getSummonsRequiredForNext(best.finalLevel, levels)}</div></div>
       `;
 
       document.getElementById('routeText').innerHTML = `최적 루트: <span class="warn">${compactRoute(best.route)}</span> / 탐색 상태 수: ${stateCount}`;
 
-      lastDetailRows = buildDetailRows(best, initialSeed, startLevel, startCount, levels, petsByRarity, extraChancePct);
+      lastDetailRows = buildDetailRows(best, initialSeed, startLevel, startCount, levels, petsByRarity, extraChancePct, ascended);
       filteredDetailRows = lastDetailRows;
       renderDetailRows(filteredDetailRows);
     }
@@ -692,7 +715,7 @@
           <td>${idx + 1}</td>
           <td>${r.batchSize}뽑</td>
           <td class="code">${hex64(r.seed)}</td>
-          <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}</td>
+          <td>Lv ${r.displayLevel + 1}<br>${r.displayCount}/${r.displayRequired || getSummonsRequiredForNext(r.displayLevel, window.__lastLevels || []) || "-"}</td>
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
           <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
@@ -731,7 +754,7 @@
         alert('저장할 결과가 없습니다. 먼저 계산하세요.');
         return;
       }
-      const allHeaders = ['번호', '선택', '현재 Seed', '현재 Level', '현재 Count', '구분', '보너스 판정', '등급', '펫', '능력치', '완성도'];
+      const allHeaders = ['번호', '선택', '현재 Seed', '현재 Level', '현재 Count/필요횟수', '구분', '보너스 판정', '등급', '펫', '능력치', '완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -752,11 +775,11 @@
           `${r.batchSize}뽑`,
           hex64(r.seed),
           `Lv ${r.displayLevel + 1}`,
-          `Count ${r.displayCount}`,
+          `${r.displayCount}/${r.displayRequired || getSummonsRequiredForNext(r.displayLevel, window.__lastLevels || []) || "-"}`,
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
           RARITY_KOR[r.rarity] || r.rarity,
-          `${r.petName}${r.petTypeKor ? ' / ' + r.petTypeKor : ''}`,
+          r.petName,
           statTextPlain(r.stats),
           `${r.perfection.toFixed(1)}%`
         ];
@@ -777,6 +800,28 @@
       URL.revokeObjectURL(url);
     }
 
+
+    function extractHexTokens(text) {
+      return String(text || '').match(/[0-9a-fA-F]{1,16}/g) || [];
+    }
+
+    function installSeedStatePasteSplit() {
+      const seedEl = document.getElementById('seed');
+      const stateEl = document.getElementById('state');
+      const handler = (e) => {
+        const text = e.clipboardData?.getData('text') || '';
+        const tokens = extractHexTokens(text);
+        if (tokens.length >= 2) {
+          e.preventDefault();
+          seedEl.value = tokens[0].toUpperCase();
+          stateEl.value = tokens[1].toUpperCase();
+        }
+      };
+      seedEl.addEventListener('paste', handler);
+      stateEl.addEventListener('paste', handler);
+    }
+
+    installSeedStatePasteSplit();
     document.getElementById('runBtn').addEventListener('click', run);
     document.getElementById('csvBtn').addEventListener('click', downloadBestCsv);
     document.getElementById('searchBtn').addEventListener('click', applySearch);

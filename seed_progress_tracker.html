@@ -118,8 +118,8 @@
 
     function getRequired(levels, internalLevel){
       const displayLevel = internalLevel + 1;
-      const directMatch = levels.find(function(row){ return Number(row.Level) === displayLevel; });
-      const row = directMatch || levels[Math.min(Math.max(displayLevel, 0), levels.length - 1)];
+      const idx = Math.min(Math.max(displayLevel, 0), levels.length - 1);
+      const row = levels[idx];
       const required = Number(row && row.SummonsRequired || 0);
       if(!Number.isFinite(required) || required < 1) throw new Error('Lv ' + displayLevel + '의 SummonsRequired 값이 올바르지 않습니다.');
       return required;
