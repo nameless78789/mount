@@ -88,6 +88,7 @@
     .rarity-Mythic { color: #d55dff; }
     .bonus { color: var(--ok); font-weight: 800; }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .muted-small { color: var(--muted); font-size: 12px; }
     .search-tools {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;
@@ -183,7 +184,7 @@
         <div class="search-tools">
           <div>
             <label>검색</label>
-            <input id="searchInput" type="text" placeholder="Seed, 등급, 스탯 검색" />
+            <input id="searchInput" type="text" placeholder="Seed, 펫 이름, 유형, 등급, 스탯 검색" />
           </div>
           <div>
             <label>&nbsp;</label>
@@ -198,11 +199,11 @@
           <label><input type="checkbox" data-col="1" checked /> 소비 Seed</label>
           <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
           <label><input type="checkbox" data-col="3" checked /> 보너스판정</label>
-          <label><input type="checkbox" data-col="4" checked /> 기본 Pet ID</label>
+          <label><input type="checkbox" data-col="4" checked /> 기본 펫</label>
           <label><input type="checkbox" data-col="5" checked /> 기본 등급</label>
           <label><input type="checkbox" data-col="6" checked /> 기본 스탯</label>
           <label><input type="checkbox" data-col="7" checked /> 기본 완성도</label>
-          <label><input type="checkbox" data-col="8" checked /> 보너스 Pet ID</label>
+          <label><input type="checkbox" data-col="8" checked /> 보너스 펫</label>
           <label><input type="checkbox" data-col="9" checked /> 보너스 등급</label>
           <label><input type="checkbox" data-col="10" checked /> 보너스 스탯</label>
           <label><input type="checkbox" data-col="11" checked /> 보너스 완성도</label>
@@ -215,11 +216,11 @@
                 <th>소비 Seed</th>
                 <th>현재 Level/Count</th>
                 <th>보너스판정</th>
-                <th>기본 Pet ID</th>
+                <th>기본 펫</th>
                 <th>기본 등급</th>
                 <th>기본 스탯</th>
                 <th>기본 완성도</th>
-                <th>보너스 Pet ID</th>
+                <th>보너스 펫</th>
                 <th>보너스 등급</th>
                 <th>보너스 스탯</th>
                 <th>보너스 완성도</th>
@@ -245,12 +246,27 @@
     };
 
     const DEFAULT_PET_IDS = {
-      Common: [0, 1, 2],
-      Rare: [0, 1, 2, 3],
-      Epic: [0, 1],
-      Legendary: [0, 1],
-      Ultimate: [0, 1],
-      Mythic: [0, 1]
+      Common: [0, 1, 2, 3, 4, 5],
+      Rare: [0, 1, 2, 3, 4],
+      Epic: [0, 1, 2, 3, 4],
+      Legendary: [0, 1, 2],
+      Ultimate: [0, 1, 2],
+      Mythic: [0, 1, 2]
+    };
+
+    const PET_NAMES = {
+      Common: ["닭", "개", "고양이", "달팽이", "쥐", "거북이"],
+      Rare: ["고슴도치", "곰", "타조", "거미", "전갈"],
+      Epic: ["참새", "검치호", "유니콘", "호랑이", "판다"],
+      Legendary: ["뱀", "케르베로스", "키츠네"],
+      Ultimate: ["토끼", "나무", "사슴"],
+      Mythic: ["용", "지니", "타이거"]
+    };
+
+    const TYPE_KOR = {
+      Health: "체력형",
+      Balanced: "밸런스형",
+      Damage: "공격형"
     };
 
     const SUBSTATS_INFO = {
@@ -350,8 +366,11 @@
             const petIdObj = data.PetId || data.PetID || data.EggId || data.EggID || data.Id || data.id || {};
             const rarity = petIdObj.Rarity || data.Rarity || data.rarity || data.Grade || data.grade;
             if (petsByRarity[rarity] !== undefined) {
-              const id = petIdObj.Id ?? petIdObj.ID ?? data.PetId?.Id ?? data.PetID?.Id ?? data.EggId?.Id ?? data.EggID?.Id ?? data.Id ?? data.id ?? key;
-              petsByRarity[rarity].push({ key, data, id });
+              const id = Number(petIdObj.Id ?? petIdObj.ID ?? data.PetId?.Id ?? data.PetID?.Id ?? data.EggId?.Id ?? data.EggID?.Id ?? data.Id ?? data.id ?? key);
+              const type = data.Type || data.type || data.PetType || data.petType || '';
+              const typeKor = TYPE_KOR[type] || type;
+              const name = PET_NAMES[rarity]?.[id] || data.Name || data.name || data.DisplayName || data.displayName || data.Title || data.title || `펫 ${id}`;
+              petsByRarity[rarity].push({ key, data, id, type, typeKor, name });
             }
           }
         }
@@ -361,7 +380,14 @@
 
       for (const rarity of RARITIES) {
         if (petsByRarity[rarity].length <= 0) {
-          petsByRarity[rarity] = DEFAULT_PET_IDS[rarity].map(id => ({ key: String(id), data: {}, id }));
+          petsByRarity[rarity] = DEFAULT_PET_IDS[rarity].map(id => ({
+            key: String(id),
+            data: {},
+            id,
+            type: '',
+            typeKor: '',
+            name: PET_NAMES[rarity]?.[id] || `펫 ${id}`
+          }));
         }
         petsByRarity[rarity].sort((a, b) => Number(a.id) - Number(b.id));
       }
@@ -395,6 +421,26 @@
       return ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
     }
 
+    function getPetName(pet, rarity) {
+      if (!pet) return '-';
+      return pet.name || PET_NAMES[rarity]?.[Number(pet.id)] || `펫 ${pet.id ?? '-'}`;
+    }
+
+    function getPetType(pet) {
+      if (!pet) return '';
+      return pet.typeKor || TYPE_KOR[pet.type] || pet.type || '';
+    }
+
+    function petDisplayHtml(name, type) {
+      const typeText = type && type !== '-' ? `<br><span class="muted-small">${type}</span>` : '';
+      return `<b>${name || '-'}</b>${typeText}`;
+    }
+
+    function petDisplayPlain(name, type) {
+      const typeText = type && type !== '-' ? ` / ${type}` : '';
+      return `${name || '-'}${typeText}`;
+    }
+
     function summonOne(seed, level, count, levels, petsByRarity, mode, extraChancePct, ascended) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
@@ -406,9 +452,9 @@
       }
 
       const { rarity, lvlData } = rollRarity(pcg, level, levels);
-      const availablePets = petsByRarity[rarity] || [{ key: '-', id: '-' }];
+      const availablePets = petsByRarity[rarity] || [{ key: '-', id: '-', name: '-', type: '', typeKor: '' }];
       const petIdx = pcg.nextInt(availablePets.length);
-      const selectedPet = availablePets[petIdx] || { key: '-', id: '-' };
+      const selectedPet = availablePets[petIdx] || { key: '-', id: '-', name: '-', type: '', typeKor: '' };
       pcg.nextGuid();
 
       const numSubstats = getSubstatCount(rarity, ascended);
@@ -442,6 +488,8 @@
         rarity,
         petId: selectedPet.id,
         petKey: selectedPet.key,
+        petName: getPetName(selectedPet, rarity),
+        petType: getPetType(selectedPet),
         stats,
         perfection: (f64Sum / numSubstats) * 100,
         nextLevel,
@@ -547,13 +595,15 @@
         count: `${r.displayCount}/${r.required || '-'}`,
         statePlain: `Lv ${r.displayLevel + 1} ${r.displayCount}/${r.required || '-'}`,
         bonus: r.bonusTriggered ? '발동' : '-',
-        normalId: String(r.normal.petId),
+        normalPet: petDisplayHtml(r.normal.petName, r.normal.petType),
+        normalPetPlain: petDisplayPlain(r.normal.petName, r.normal.petType),
         normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,
         normalRarityKey: r.normal.rarity,
         normalStats: statText(r.normal.stats),
         normalStatsPlain: statTextPlain(r.normal.stats),
         normalPerfection: `${r.normal.perfection.toFixed(1)}%`,
-        bonusId: String(r.bonus.petId),
+        bonusPet: petDisplayHtml(r.bonus.petName, r.bonus.petType),
+        bonusPetPlain: petDisplayPlain(r.bonus.petName, r.bonus.petType),
         bonusRarity: RARITY_KOR[r.bonus.rarity] || r.bonus.rarity,
         bonusRarityKey: r.bonus.rarity,
         bonusStats: statText(r.bonus.stats),
@@ -571,11 +621,11 @@
             <td class="code">${d.seed}</td>
             <td>${d.level}<br>${d.count}</td>
             <td>${d.bonus === '발동' ? '<span class="bonus">발동</span>' : '-'}</td>
-            <td class="code">${d.normalId}</td>
+            <td>${d.normalPet}</td>
             <td class="rarity-${d.normalRarityKey}"><b>${d.normalRarity}</b></td>
             <td>${d.normalStats}</td>
             <td>${d.normalPerfection}</td>
-            <td class="code">${d.bonusId}</td>
+            <td>${d.bonusPet}</td>
             <td class="rarity-${d.bonusRarityKey}"><b>${d.bonusRarity}</b></td>
             <td>${d.bonusStats}</td>
             <td>${d.bonusPerfection}</td>
@@ -629,7 +679,7 @@
         return;
       }
 
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 Pet ID', '기본 등급', '기본 스탯', '기본 완성도', '보너스 Pet ID', '보너스 등급', '보너스 스탯', '보너스 완성도'];
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 펫', '기본 등급', '기본 스탯', '기본 완성도', '보너스 펫', '보너스 등급', '보너스 스탯', '보너스 완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -646,7 +696,7 @@
 
       exportRows.forEach((r, idx) => {
         const d = rowToDisplay(r, idx);
-        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalId, d.normalRarity, d.normalStatsPlain, d.normalPerfection, d.bonusId, d.bonusRarity, d.bonusStatsPlain, d.bonusPerfection];
+        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalPetPlain, d.normalRarity, d.normalStatsPlain, d.normalPerfection, d.bonusPetPlain, d.bonusRarity, d.bonusStatsPlain, d.bonusPerfection];
         lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
       });
 
