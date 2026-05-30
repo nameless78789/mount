@@ -199,11 +199,11 @@
           <label><input type="checkbox" data-col="1" checked /> 소비 Seed</label>
           <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
           <label><input type="checkbox" data-col="3" checked /> 보너스판정</label>
-          <label><input type="checkbox" data-col="4" checked /> 기본 ID</label>
+          <label><input type="checkbox" data-col="4" checked /> 기본 이름</label>
           <label><input type="checkbox" data-col="5" checked /> 기본 등급</label>
           <label><input type="checkbox" data-col="6" checked /> 기본 스탯</label>
           <label><input type="checkbox" data-col="7" checked /> 기본 완성도</label>
-          <label><input type="checkbox" data-col="8" checked /> 보너스 ID</label>
+          <label><input type="checkbox" data-col="8" checked /> 보너스 이름</label>
           <label><input type="checkbox" data-col="9" checked /> 보너스 등급</label>
           <label><input type="checkbox" data-col="10" checked /> 보너스 스탯</label>
           <label><input type="checkbox" data-col="11" checked /> 보너스 완성도</label>
@@ -216,11 +216,11 @@
                 <th>소비 Seed</th>
                 <th>현재 Level/Count</th>
                 <th>보너스판정</th>
-                <th>기본 ID</th>
+                <th>기본 이름</th>
                 <th>기본 등급</th>
                 <th>기본 스탯</th>
                 <th>기본 완성도</th>
-                <th>보너스 ID</th>
+                <th>보너스 이름</th>
                 <th>보너스 등급</th>
                 <th>보너스 스탯</th>
                 <th>보너스 완성도</th>
@@ -252,6 +252,15 @@
       Legendary: [0, 1],
       Ultimate: [0, 1],
       Mythic: [0, 1]
+    };
+
+    const MOUNT_NAMES = {
+      Common: ["수련잎", "백합잎", "갈색잎"],
+      Rare: ["말", "공룡", "게", "거북이"],
+      Epic: ["돼지", "염소"],
+      Legendary: ["자전거", "벌"],
+      Ultimate: ["킥보드", "드래곤"],
+      Mythic: ["원반", "보드"]
     };
 
     const SUBSTATS_INFO = {
@@ -351,7 +360,14 @@
             const mountId = data.MountId || data.Id || {};
             const rarity = mountId.Rarity || data.Rarity || data.rarity;
             if (mountsByRarity[rarity] !== undefined) {
-              mountsByRarity[rarity].push({ key, data, id: mountId.Id ?? data.Id ?? key });
+              const id = mountId.Id ?? data.Id ?? key;
+              const idx = mountsByRarity[rarity].length;
+              mountsByRarity[rarity].push({
+                key,
+                data,
+                id,
+                name: data.Name ?? data.name ?? data.DisplayName ?? data.displayName ?? MOUNT_NAMES[rarity]?.[idx] ?? String(id)
+              });
             }
           }
         }
@@ -361,7 +377,12 @@
 
       for (const rarity of RARITIES) {
         if (mountsByRarity[rarity].length <= 0) {
-          mountsByRarity[rarity] = DEFAULT_MOUNT_IDS[rarity].map(id => ({ key: String(id), data: {}, id }));
+          mountsByRarity[rarity] = DEFAULT_MOUNT_IDS[rarity].map((id, idx) => ({
+            key: String(id),
+            data: {},
+            id,
+            name: MOUNT_NAMES[rarity]?.[idx] || String(id)
+          }));
         }
         mountsByRarity[rarity].sort((a, b) => Number(a.id) - Number(b.id));
       }
@@ -395,7 +416,7 @@
       const { rarity, lvlData } = rollRarity(pcg, level, levels);
       const availableMounts = mountsByRarity[rarity] || [{ key: '-', id: '-' }];
       const mountIdx = pcg.nextInt(availableMounts.length);
-      const selectedMount = availableMounts[mountIdx] || { key: '-', id: '-' };
+      const selectedMount = availableMounts[mountIdx] || { key: '-', id: '-', name: '-' };
       pcg.nextGuid();
 
       const numSubstats = ascended ? 2 : (["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1);
@@ -428,6 +449,7 @@
         bonusTriggered,
         rarity,
         mountId: selectedMount.id,
+        mountName: selectedMount.name || String(selectedMount.id),
         mountKey: selectedMount.key,
         stats,
         perfection: (f64Sum / numSubstats) * 100,
@@ -532,13 +554,13 @@
         count: r.displayCount,
         bonus: r.bonusTriggered ? '발동' : '-',
         required: getRequiredCount(r.displayLevel),
-        normalId: String(r.normal.mountId),
+        normalId: String(r.normal.mountName || r.normal.mountId),
         normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,
         normalRarityKey: r.normal.rarity,
         normalStats: statText(r.normal.stats),
         normalStatsPlain: statTextPlain(r.normal.stats),
         normalPerfection: `${r.normal.perfection.toFixed(1)}%`,
-        bonusId: String(r.bonus.mountId),
+        bonusId: String(r.bonus.mountName || r.bonus.mountId),
         bonusRarity: RARITY_KOR[r.bonus.rarity] || r.bonus.rarity,
         bonusRarityKey: r.bonus.rarity,
         bonusStats: statText(r.bonus.stats),
@@ -614,7 +636,7 @@
         return;
       }
 
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '보너스판정', '기본 ID', '기본 등급', '기본 스탯', '기본 완성도', '보너스 ID', '보너스 등급', '보너스 스탯', '보너스 완성도'];
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count', '보너스판정', '기본 이름', '기본 등급', '기본 스탯', '기본 완성도', '보너스 이름', '보너스 등급', '보너스 스탯', '보너스 완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
