@@ -587,7 +587,7 @@
         no: idx + 1,
         seed: hex64(r.seed),
         level: `Lv ${r.displayLevel + 1}`,
-        count: `${r.displayCount}/${r.required || '-'}`,
+        count: `Count ${r.displayCount}/${r.required || '-'}`,
         statePlain: `Lv ${r.displayLevel + 1} ${r.displayCount}/${r.required || '-'}`,
         bonus: r.bonusTriggered ? '발동' : '-',
         normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,

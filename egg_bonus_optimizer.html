@@ -722,7 +722,7 @@
           `${r.batchSize}뽑`,
           hex64(r.seed),
           `Lv ${r.displayLevel + 1}`,
-          `${r.displayCount}/${r.displayRequired || '-'}`,
+          `Count ${r.displayCount}/${r.displayRequired || '-'}`,
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
           RARITY_KOR[r.rarity] || r.rarity,statTextPlain(r.stats),
