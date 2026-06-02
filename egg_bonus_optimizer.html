@@ -223,7 +223,7 @@
       <div class="search-tools">
         <div>
           <label>검색</label>
-          <input id="searchInput" type="text" placeholder="Seed, 선택, 구분, 보너스, 등급, 능력치 검색" />
+          <input id="searchInput" type="text" placeholder="Seed, Level/Count, 뽑기, 구분, 보너스, 등급, 능력치 검색" />
         </div>
         <div>
           <label>&nbsp;</label>
@@ -231,9 +231,9 @@
         </div>
       </div>
       <div class="column-tools" id="columnTools">
-        <label><input type="checkbox" data-col="1" checked /> 선택</label>
-        <label><input type="checkbox" data-col="2" checked /> 현재 Seed</label>
-        <label><input type="checkbox" data-col="3" checked /> Level/Count</label>
+        <label><input type="checkbox" data-col="1" checked /> 현재 Seed</label>
+        <label><input type="checkbox" data-col="2" checked /> Level/Count</label>
+        <label><input type="checkbox" data-col="3" checked /> 뽑기</label>
         <label><input type="checkbox" data-col="4" checked /> 구분</label>
         <label><input type="checkbox" data-col="5" checked /> 보너스 판정</label>
         <label><input type="checkbox" data-col="6" checked /> 등급</label>
@@ -245,9 +245,9 @@
           <thead>
             <tr>
               <th>번호</th>
-              <th>선택</th>
               <th>현재 Seed</th>
               <th>Level/Count</th>
+              <th>뽑기</th>
               <th>구분</th>
               <th>보너스 판정</th>
               <th>등급</th>
@@ -496,7 +496,8 @@
         `${r.displayCount}/${r.displayRequired || '-'}`,
         r.mode === 'normal' ? '기본' : '추가',
         r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
-        RARITY_KOR[r.rarity] || r.rarity,statTextPlain(r.stats),
+        RARITY_KOR[r.rarity] || r.rarity,
+        statTextPlain(r.stats),
         `${r.perfection.toFixed(1)}%`
       ].join(' ').toLowerCase();
     }
@@ -661,9 +662,9 @@
       document.getElementById('detailBody').innerHTML = rows.map((r, idx) => `
         <tr>
           <td>${idx + 1}</td>
-          <td>${r.batchSize}뽑</td>
           <td class="code">${hex64(r.seed)}</td>
           <td>Lv ${r.displayLevel + 1}<br>${r.displayCount}/${r.displayRequired || '-'}</td>
+          <td>${r.batchSize}뽑</td>
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
           <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
@@ -701,13 +702,13 @@
         alert('저장할 결과가 없습니다. 먼저 계산하세요.');
         return;
       }
-      const allHeaders = ['번호', '선택', '현재 Seed', '현재 Level', '현재 Count/필요횟수', '구분', '보너스 판정', '등급', '능력치', '완성도'];
+      const allHeaders = ['번호', '현재 Seed', '현재 Level', '현재 Count/필요횟수', '뽑기', '구분', '보너스 판정', '등급', '능력치', '완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
-        if (idx === 3) {
-          exportIndexes.push(3, 4);
-        } else if (idx > 3) {
+        if (idx === 2) {
+          exportIndexes.push(2, 3);
+        } else if (idx > 2) {
           exportIndexes.push(idx + 1);
         } else {
           exportIndexes.push(idx);
@@ -719,13 +720,14 @@
       exportRows.forEach((r, idx) => {
         const allValues = [
           idx + 1,
-          `${r.batchSize}뽑`,
           hex64(r.seed),
           `Lv ${r.displayLevel + 1}`,
           `Count ${r.displayCount}/${r.displayRequired || '-'}`,
+          `${r.batchSize}뽑`,
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
-          RARITY_KOR[r.rarity] || r.rarity,statTextPlain(r.stats),
+          RARITY_KOR[r.rarity] || r.rarity,
+          statTextPlain(r.stats),
           `${r.perfection.toFixed(1)}%`
         ];
         lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
