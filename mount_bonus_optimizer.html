@@ -673,7 +673,7 @@
           <td>${idx + 1}</td>
           <td>${r.batchSize}뽑</td>
           <td class="code">${hex64(r.seed)}</td>
-          <td>Lv ${r.displayLevel + 1}<br>${r.displayCount}/${r.requiredCount}</td>
+          <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}/${r.requiredCount}</td>
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
           <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
@@ -733,7 +733,7 @@
           `${r.batchSize}뽑`,
           hex64(r.seed),
           `Lv ${r.displayLevel + 1}`,
-          `${r.displayCount}/${r.requiredCount}`,
+          `Count ${r.displayCount}/${r.requiredCount}`,
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
           RARITY_KOR[r.rarity] || r.rarity,
