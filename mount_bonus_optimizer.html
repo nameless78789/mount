@@ -247,9 +247,9 @@
           <thead>
             <tr>
               <th>번호</th>
-              <th>선택</th>
               <th>현재 Seed</th>
               <th>Level/Count</th>
+              <th>선택</th>
               <th>구분</th>
               <th>보너스 판정</th>
               <th>등급</th>
@@ -671,9 +671,9 @@
       document.getElementById('detailBody').innerHTML = rows.map((r, idx) => `
         <tr>
           <td>${idx + 1}</td>
-          <td>${r.batchSize}뽑</td>
           <td class="code">${hex64(r.seed)}</td>
           <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}/${r.requiredCount}</td>
+          <td>${r.batchSize}뽑</td>
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
           <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
