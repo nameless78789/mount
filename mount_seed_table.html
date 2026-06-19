@@ -158,7 +158,7 @@
           </div>
           <div>
             <label>추가 소환확률 (%)</label>
-            <input id="extraChance" type="number" step="2" value="0" />
+            <input id="extraChance" type="number" min="0" max="100" step="2" value="0" />
           </div>
           <div>
             <label>비교할 Seed 개수</label>
@@ -479,13 +479,14 @@
         loadedLevels = levels;
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
-        const extraChancePct = Number(document.getElementById('extraChance').value || 0);
+        let extraChancePct = Number(document.getElementById('extraChance').value || 0);
         let scanCount = Number(document.getElementById('scanCount').value);
         const ascended = document.getElementById('ascended').value === 'true';
 
-        if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) {
-          throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
-        }
+        if (!Number.isFinite(extraChancePct)) extraChancePct = 0;
+        extraChancePct = Math.max(0, Math.min(100, extraChancePct));
+        document.getElementById('extraChance').value = extraChancePct;
+
         if (!Number.isInteger(scanCount) || scanCount < 1) scanCount = 1;
         if (scanCount > 1000) scanCount = 1000;
         document.getElementById('scanCount').value = scanCount;
@@ -691,6 +692,20 @@
       document.getElementById('seed').value = parsed.seed;
       document.getElementById('state').value = parsed.state;
     }
+
+
+
+    function clampNumberInput(input, min, max, fallback = min) {
+      let value = Number(input.value);
+      if (!Number.isFinite(value)) value = fallback;
+      value = Math.max(min, Math.min(max, value));
+      input.value = value;
+      return value;
+    }
+
+    const extraChanceInput = document.getElementById('extraChance');
+    extraChanceInput.addEventListener('input', () => clampNumberInput(extraChanceInput, 0, 100, 0));
+    extraChanceInput.addEventListener('change', () => clampNumberInput(extraChanceInput, 0, 100, 0));
 
     document.getElementById('runBtn').addEventListener('click', scan);
     document.getElementById('seed').addEventListener('paste', handleSeedStatePaste);

@@ -185,7 +185,7 @@
         </div>
         <div>
           <label>Extra Summon Chance (%)</label>
-          <input id="extraChance" type="number" step="2" value="0" />
+          <input id="extraChance" type="number" min="0" max="100" step="2" value="0" />
         </div>
         <div>
           <label>사용할 기본 뽑기 자원</label>
@@ -627,12 +627,15 @@
         const levels = await loadLevels();
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
-        const extraChancePct = Number(document.getElementById('extraChance').value || 0);
+        let extraChancePct = Number(document.getElementById('extraChance').value || 0);
         let resourceCount = Number(document.getElementById('resourceCount').value);
         const ascended = document.getElementById('ascended').value === 'true';
         const batchOptions = Array.from(document.querySelectorAll('.batchOpt:checked')).map(el => Number(el.value)).sort((a, b) => b - a);
 
-        if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
+        if (!Number.isFinite(extraChancePct)) extraChancePct = 0;
+        if (extraChancePct < 0) extraChancePct = 0;
+        if (extraChancePct > 100) extraChancePct = 100;
+        document.getElementById('extraChance').value = extraChancePct;
         if (!Number.isInteger(resourceCount) || resourceCount < 1) resourceCount = 1;
         if (resourceCount > 1000) resourceCount = 1000;
         if (!batchOptions.length) throw new Error('사용할 뽑기 종류를 하나 이상 선택하세요.');
