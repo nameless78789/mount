@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>탈것 소환 최적화 테이블</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: #374151;
+      --danger: #f87171;
+      --ok: #34d399;
+      --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #020617, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
+    .card {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.35);
+      margin-bottom: 16px;
+    }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+    input, select, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #020617;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    button {
+      margin-top: 14px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 13px 14px;
+    }
+    button.secondary {
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      font-size: 14px;
+      padding: 10px 12px;
+    }
+    .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .batch-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #020617;
+    }
+    .batch-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .batch-row input { width: auto; padding: 0; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .note { font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+    .error { color: var(--danger); white-space: pre-wrap; margin-top: 12px; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .mini {
+      background: #020617;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .mini .k { color: var(--muted); font-size: 12px; }
+    .mini .v { margin-top: 4px; font-weight: 800; font-size: 16px; word-break: break-all; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; white-space: nowrap; }
+    th { color: var(--muted); background: #020617; position: sticky; top: 0; }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .bonus { color: var(--ok); font-weight: 800; }
+    .rarity-Common { color: #f1f1f1; }
+    .rarity-Rare { color: #5dd8ff; }
+    .rarity-Epic { color: #5dff8a; }
+    .rarity-Legendary { color: #fcff5d; }
+    .rarity-Ultimate { color: #ff5d5d; }
+    .rarity-Mythic { color: #d55dff; }
+    .warn { color: var(--warn); font-weight: 800; }
+    .route-1 { color: #e5e7eb; font-weight: 800; }
+    .route-15 { color: #5dd8ff; font-weight: 800; }
+    .route-50 { color: #ff9f43; font-weight: 800; }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .tools { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 12px; }
+    .tools button { width: auto; margin-top: 0; }
+    .search-tools {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: end;
+    }
+    .search-tools label { margin-top: 0; }
+    .column-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #020617;
+    }
+    .column-tools label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      color: var(--text);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .column-tools input[type="checkbox"] { width: auto; padding: 0; }
+    .hidden-col { display: none; }
+    @media (max-width: 1000px) {
+      .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summary { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      body { padding: 12px; }
+      .card { padding: 12px; }
+      .row, .tools { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: 1fr; }
+      label { font-size: 11px; }
+      input, select, button { font-size: 12px; padding: 8px 6px; }
+      th, td { font-size: 12px; padding: 8px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>탈것 소환 최적화 테이블</h1>
+    <div class="desc">
+      같은 자원량을 쓸 때 1뽑, 15뽑, 50뽑을 어떤 순서로 섞어야 보너스 소환이 가장 많이 나오는지 찾는 도구입니다.
+      예: 자원 100개 기준으로 1뽑 100번, 50뽑 2번, 1뽑 10번 + 15뽑 6번 같은 루트를 비교합니다.
+      <div class="note">
+        ※ 12줄 HEX코드 중 10번째 줄이 탈것 시드(Seed), 11번째 줄이 탈것 레벨카운트(State) 값입니다.<br>
+        2줄로 복사된 Seed와 State를 Seed칸에 붙여넣으면 자동으로 분리 입력됩니다.
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="row">
+        <div>
+          <label>Mount Seed (HEX16)</label>
+          <input id="seed" value="" spellcheck="false" placeholder="예: 1234567812345678" />
+        </div>
+        <div>
+          <label>Level/Count State (HEX16)</label>
+          <input id="state" value="" spellcheck="false" placeholder="예: 0000005A0000000E" />
+        </div>
+        <div>
+          <label>Extra Summon Chance (%)</label>
+          <input id="extraChance" type="number" step="2" value="0" />
+        </div>
+        <div>
+          <label>사용할 기본 뽑기 자원</label>
+          <input id="resourceCount" type="number" min="1" max="1000" step="1" value="100" />
+        </div>
+        <div>
+          <label>승천 여부</label>
+          <select id="ascended">
+            <option value="false" selected>기본 상태</option>
+            <option value="true">승천 상태</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="batch-row">
+        <label><input type="checkbox" class="batchOpt" value="1" checked /> 1뽑 사용</label>
+        <label><input type="checkbox" class="batchOpt" value="15" checked /> 15뽑 사용</label>
+        <label><input type="checkbox" class="batchOpt" value="50" checked /> 50뽑 사용</label>
+      </div>
+
+      <div class="hint">
+        Level/Count는 현재 소환 단계를 표시합니다. 예를 들어, 3/20 상태에서 소환할 경우 이번에 나오는 결과는 4/20번째 탈것입니다.<br>
+        승천 상태에서는 등급과 관계없이 모든 탈것의 스탯을 2개로 계산하며, 최대 비교 개수는 1000개까지 지원합니다.
+      </div>
+      <button id="runBtn">최대 보너스 루트 찾기</button>
+      <div id="error" class="error"></div>
+    </section>
+
+    <section class="card">
+      <div class="summary" id="summary"></div>
+      
+      <div class="hint" id="routeText">결과 없음</div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+        <h2 style="margin:0; font-size:20px;">최적 루트 상세</h2>
+        <div class="tools"><button id="csvBtn" type="button" class="secondary">CSV 저장</button></div>
+      </div>
+      <div class="search-tools">
+        <div>
+          <label>검색</label>
+          <input id="searchInput" type="text" placeholder="Seed, 뽑기, 구분, 보너스, 등급, 탈것명, 능력치 검색" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="searchBtn" type="button" class="secondary">검색</button>
+        </div>
+      </div>
+      <div class="column-tools" id="columnTools">
+        <label><input type="checkbox" data-col="1" checked /> 뽑기</label>
+        <label><input type="checkbox" data-col="2" checked /> 현재 Seed</label>
+        <label><input type="checkbox" data-col="3" checked /> Level/Count</label>
+        <label><input type="checkbox" data-col="4" checked /> 구분</label>
+        <label><input type="checkbox" data-col="5" checked /> 보너스 판정</label>
+        <label><input type="checkbox" data-col="6" checked /> 등급</label>
+        <label><input type="checkbox" data-col="7" checked /> 탈것명</label>
+        <label><input type="checkbox" data-col="8" checked /> 능력치</label>
+        <label><input type="checkbox" data-col="9" checked /> 완성도</label>
+      </div>
+      <div style="overflow:auto; max-height: 620px; border-radius: 12px; border: 1px solid var(--line);">
+        <table>
+          <thead>
+            <tr>
+              <th>번호</th>
+              <th>현재 Seed</th>
+              <th>Level/Count</th>
+              <th>뽑기</th>
+              <th>구분</th>
+              <th>보너스 판정</th>
+              <th>등급</th>
+              <th>탈것명</th>
+              <th>능력치</th>
+              <th>완성도</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const U64_MASK = (1n << 64n) - 1n;
+    const U32 = 4294967296;
+    const MULT = 0x5851f42d4c957f2dn;
+    const INIT_INC = 0x1a08ee1184ba6d32n;
+    const STEP_INC = 0x14057b7ef767814fn;
+
+    const RARITIES = ["Common", "Rare", "Epic", "Legendary", "Ultimate", "Mythic"];
+    const RARITY_KOR = { Common: "일반", Rare: "희귀", Epic: "서사", Legendary: "전설", Ultimate: "궁극", Mythic: "신화" };
+    const SUBSTATS_INFO = {
+      "Critical Chance": [0.01, 0.12],
+      "Critical Damage": [0.01, 0.80],
+      "Block Chance": [0.01, 0.05],
+      "Health Regen": [0.01, 0.04],
+      "Life Steal": [0.01, 0.20],
+      "Double Chance": [0.01, 0.20],
+      "Damage": [0.01, 0.15],
+      "Melee Damage": [0.01, 0.50],
+      "Ranged Damage": [0.01, 0.15],
+      "Attack Speed": [0.01, 0.40],
+      "Skill Damage": [0.01, 0.30],
+      "Skill Cooldown": [0.01, 0.07],
+      "Health": [0.01, 0.15]
+    };
+    const SUBSTATS_POOL = Object.keys(SUBSTATS_INFO);
+    const SUBSTAT_KOR = {
+      "Critical Chance": "치명타 확률", "Critical Damage": "치명타 피해", "Block Chance": "블록",
+      "Health Regen": "체력 재생", "Life Steal": "생명력 흡수", "Double Chance": "더블찬스",
+      "Damage": "피해", "Melee Damage": "근접 피해", "Ranged Damage": "원거리 피해",
+      "Attack Speed": "공격속도", "Skill Damage": "스킬 피해", "Skill Cooldown": "스킬 쿨", "Health": "체력"
+    };
+
+    const MOUNT_NAMES = {
+      Common: ["수련잎", "백합잎", "갈색잎"],
+      Rare: ["말", "공룡", "게", "거북이"],
+      Epic: ["돼지", "염소"],
+      Legendary: ["자전거", "벌"],
+      Ultimate: ["킥보드", "드래곤"],
+      Mythic: ["원반", "보드"]
+    };
+
+    class MetaplayPCG {
+      constructor(seed) {
+        this.state = (seed * MULT + INIT_INC) & U64_MASK;
+      }
+      nextPcg32() {
+        const old = this.state;
+        this.state = (old * MULT + STEP_INC) & U64_MASK;
+        const xorshifted = Number((((old >> 18n) ^ old) >> 27n) & 0xFFFFFFFFn) >>> 0;
+        const rot = Number((old >> 59n) & 0x1Fn);
+        const leftShift = (xorshifted << ((~rot + 1) & 0x1F)) >>> 0;
+        const rightShift = (xorshifted >>> rot) >>> 0;
+        return (leftShift + rightShift) >>> 0;
+      }
+      nextF64() { return this.nextPcg32() / U32; }
+      nextInt(maxVal) {
+        if (maxVal <= 0) return 0;
+        const raw = this.nextPcg32();
+        const posVal = (raw >>> 1) & 0x7FFFFFFF;
+        return posVal % maxVal;
+      }
+      nextULong() {
+        const high = BigInt(this.nextPcg32());
+        const low = BigInt(this.nextPcg32());
+        return ((high << 32n) | low) & U64_MASK;
+      }
+      nextGuid() { this.nextULong(); this.nextULong(); }
+    }
+
+    function parseHex64(s, fieldName) {
+      const clean = s.trim().replace(/^0x/i, "");
+      if (!/^[0-9a-fA-F]{1,16}$/.test(clean)) throw new Error(`${fieldName}는 16자리 이하 HEX 값이어야 합니다.`);
+      return BigInt("0x" + clean);
+    }
+
+    function hex64(v) {
+      return (v & U64_MASK).toString(16).toUpperCase().padStart(16, "0");
+    }
+
+    function getRequiredCount(level, levels) {
+      if (!Array.isArray(levels) || levels.length === 0) return 999999999;
+      const idx = Math.min(level + 1, levels.length - 1);
+      return Number(levels[idx]?.SummonsRequired || 999999999);
+    }
+
+    function extractSeedStateFromText(text) {
+      const hexes = (text || '').replace(/0x/gi, '').match(/[0-9a-fA-F]{16}/g);
+      if (!hexes || hexes.length < 2) return null;
+      return {
+        seed: hexes[0].toUpperCase(),
+        state: hexes[1].toUpperCase()
+      };
+    }
+
+    function handleSeedStatePaste(e) {
+      const pasted = e.clipboardData?.getData('text') || '';
+      const parsed = extractSeedStateFromText(pasted);
+      if (!parsed) return;
+
+      e.preventDefault();
+      document.getElementById('seed').value = parsed.seed;
+      document.getElementById('state').value = parsed.state;
+    }
+
+    async function loadLevels() {
+      let resp;
+      try {
+        resp = await fetch('./MountSummonConfig.json');
+      } catch (e) {
+        throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
+      }
+      if (!resp.ok) throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
+      const config = await resp.json();
+      if (!Array.isArray(config.Levels) || config.Levels.length === 0) throw new Error('MountSummonConfig.json의 Levels 배열이 비어 있습니다.');
+      return config.Levels;
+    }
+
+    function bonusTriggeredAt(seed, extraChancePct) {
+      const pcg = new MetaplayPCG(seed);
+      const bonusRaw = pcg.nextPcg32();
+      const chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
+      return bonusRaw < chanceRaw;
+    }
+
+    function getSubstatValue(name, f64) {
+      const [low, up] = SUBSTATS_INFO[name];
+      return low + f64 * (up - low);
+    }
+
+    function rollRarity(pcg, level, levels) {
+      const lvlIdx = Math.min(level, levels.length - 1);
+      const data = levels[lvlIdx];
+      const raw = pcg.nextPcg32();
+      let acc = 0;
+      for (const rarity of RARITIES) {
+        const chance = Number(data[rarity] || 0);
+        acc += Math.round(chance * U32);
+        if (raw < acc) return { rarity, lvlData: data };
+      }
+      return { rarity: "Common", lvlData: data };
+    }
+
+    function summonDetail(seed, level, count, levels, mode, extraChancePct, batchSize, ascended) {
+      const pcg = new MetaplayPCG(seed);
+      let bonusTriggered = false;
+      if (mode === 'normal') {
+        const bonusRaw = pcg.nextPcg32();
+        const chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
+        bonusTriggered = bonusRaw < chanceRaw;
+      }
+
+      const { rarity, lvlData } = rollRarity(pcg, level, levels);
+      const mountList = MOUNT_NAMES[rarity] || ['-'];
+      const mountId = pcg.nextInt(mountList.length);
+      const mountName = mountList[mountId] || '-';
+      pcg.nextGuid();
+
+      const numSubstats = ascended ? 2 : (["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1);
+      const availableStats = [...SUBSTATS_POOL];
+      const stats = [];
+      for (let i = 0; i < numSubstats; i++) {
+        const statIdx = pcg.nextInt(availableStats.length);
+        const statName = availableStats[statIdx];
+        availableStats.splice(statIdx, 1);
+        const f64 = pcg.nextF64();
+        stats.push({ name: statName, value: getSubstatValue(statName, f64) * 100 });
+      }
+
+      let nextLevel = level;
+      let nextCount = count + 1;
+      const required = Number(lvlData.SummonsRequired || 999999999);
+      if (nextCount >= required) {
+        nextCount -= required;
+        nextLevel += 1;
+      }
+
+      const perfection = stats.length ? (stats.reduce((sum, s) => sum + ((s.value / 100 - SUBSTATS_INFO[s.name][0]) / (SUBSTATS_INFO[s.name][1] - SUBSTATS_INFO[s.name][0])), 0) / stats.length) * 100 : 0;
+
+      return {
+        seed,
+        batchSize,
+        displayLevel: level,
+        displayCount: count + 1,
+        requiredCount: getRequiredCount(level, levels),
+        mode,
+        bonusTriggered,
+        rarity,
+        mountId,
+        mountName,
+        stats,
+        perfection,
+        nextLevel,
+        nextCount
+      };
+    }
+
+    function statText(stats) {
+      if (!stats || !stats.length) return '-';
+      return stats.map(s => `${SUBSTAT_KOR[s.name] || s.name} +${s.value.toFixed(2)}%`).join('<br>');
+    }
+
+    function statTextPlain(stats) {
+      if (!stats || !stats.length) return '-';
+      return stats.map(s => `${SUBSTAT_KOR[s.name] || s.name} +${s.value.toFixed(2)}%`).join(' / ');
+    }
+
+    function buildDetailRows(best, initialSeed, startLevel, startCount, levels, extraChancePct, ascended) {
+      const rows = [];
+      let level = startLevel;
+      let count = startCount;
+      for (const step of best.route) {
+        for (let i = 0; i < step.batchSize; i++) {
+          const seed = step.baseStart + BigInt(i);
+          const r = summonDetail(seed, level, count, levels, 'normal', extraChancePct, step.batchSize, ascended);
+          rows.push(r);
+          level = r.nextLevel;
+          count = r.nextCount;
+        }
+        for (let i = 0; i < step.bonusCount; i++) {
+          const seed = step.bonusStart + BigInt(i);
+          const r = summonDetail(seed, level, count, levels, 'bonus', extraChancePct, step.batchSize, ascended);
+          rows.push(r);
+          level = r.nextLevel;
+          count = r.nextCount;
+        }
+      }
+      return rows;
+    }
+
+    let filteredDetailRows = [];
+
+    function rowToSearchText(r, idx) {
+      return [
+        idx + 1,
+        `${r.batchSize}뽑`,
+        hex64(r.seed),
+        `Lv ${r.displayLevel + 1}`,
+        `Count ${r.displayCount}/${r.requiredCount}`,
+        r.mode === 'normal' ? '기본' : '추가',
+        r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
+        RARITY_KOR[r.rarity] || r.rarity,
+        r.mountName,
+        statTextPlain(r.stats),
+        `${r.perfection.toFixed(1)}%`
+      ].join(' ').toLowerCase();
+    }
+
+    function applySearch() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!q) {
+        filteredDetailRows = lastDetailRows;
+      } else {
+        filteredDetailRows = lastDetailRows.filter((r, idx) => rowToSearchText(r, idx).includes(q));
+      }
+      renderDetailRows(filteredDetailRows);
+    }
+
+    function advanceState(level, count, steps, levels) {
+      let nextLevel = level;
+      let nextCount = count;
+      for (let i = 0; i < steps; i++) {
+        const lvlIdx = Math.min(nextLevel, levels.length - 1);
+        const required = Number(levels[lvlIdx].SummonsRequired || 999999999);
+        nextCount += 1;
+        if (nextCount >= required) {
+          nextCount -= required;
+          nextLevel += 1;
+        }
+      }
+      return { level: nextLevel, count: nextCount };
+    }
+
+    function evalBatch(initialSeed, consumedBefore, batchSize, extraChancePct) {
+      let bonusCount = 0;
+      const baseStart = initialSeed + BigInt(consumedBefore);
+      for (let i = 0; i < batchSize; i++) {
+        const seed = initialSeed + BigInt(consumedBefore + i);
+        if (bonusTriggeredAt(seed, extraChancePct)) bonusCount += 1;
+      }
+      const baseEnd = initialSeed + BigInt(consumedBefore + batchSize - 1);
+      const bonusStart = bonusCount > 0 ? initialSeed + BigInt(consumedBefore + batchSize) : null;
+      const bonusEnd = bonusCount > 0 ? initialSeed + BigInt(consumedBefore + batchSize + bonusCount - 1) : null;
+      return {
+        batchSize,
+        bonusCount,
+        consumedAfter: consumedBefore + batchSize + bonusCount,
+        baseStart,
+        baseEnd,
+        bonusStart,
+        bonusEnd
+      };
+    }
+
+    function compactRoute(route) {
+      const parts = [];
+      for (const step of route) {
+        const last = parts[parts.length - 1];
+        if (last && last.size === step.batchSize) {
+          last.count += 1;
+        } else {
+          parts.push({ size: step.batchSize, count: 1 });
+        }
+      }
+      return parts.map(p => {
+        const text = p.count === 1 ? `${p.size}뽑` : `${p.size}뽑×${p.count}`;
+        return `<span class="route-${p.size}">${text}</span>`;
+      }).join(' <span class="warn">→</span> ');
+    }
+
+    function optimize(initialSeed, startLevel, startCount, levels, extraChancePct, resourceCount, batchOptions) {
+      const dp = Array.from({ length: resourceCount + 1 }, () => new Map());
+      dp[0].set(0, { consumed: 0, bonus: 0, route: [] });
+
+      for (let spent = 0; spent <= resourceCount; spent++) {
+        for (const state of dp[spent].values()) {
+          for (const batchSize of batchOptions) {
+            if (spent + batchSize > resourceCount) continue;
+            const batch = evalBatch(initialSeed, state.consumed, batchSize, extraChancePct);
+            const nextSpent = spent + batchSize;
+            const nextConsumed = batch.consumedAfter;
+            const nextBonus = state.bonus + batch.bonusCount;
+            const nextRoute = state.route.concat([batch]);
+            const prev = dp[nextSpent].get(nextConsumed);
+            if (!prev || nextBonus > prev.bonus || nextRoute.length < prev.route.length) {
+              dp[nextSpent].set(nextConsumed, { consumed: nextConsumed, bonus: nextBonus, route: nextRoute });
+            }
+          }
+        }
+      }
+
+      let best = null;
+      for (const candidate of dp[resourceCount].values()) {
+        if (!best || candidate.bonus > best.bonus ||
+            (candidate.bonus === best.bonus && candidate.route.length < best.route.length) ||
+            (candidate.bonus === best.bonus && candidate.route.length === best.route.length && candidate.consumed < best.consumed)) {
+          best = candidate;
+        }
+      }
+
+      if (best) {
+        const finalState = advanceState(startLevel, startCount, best.consumed, levels);
+        best.finalLevel = finalState.level;
+        best.finalCount = finalState.count;
+      }
+
+      return { best, stateCount: dp.reduce((sum, m) => sum + m.size, 0) };
+    }
+
+    let lastBest = null;
+    let lastInitialSeed = 0n;
+    let lastDetailRows = [];
+
+    async function run() {
+      const errorEl = document.getElementById('error');
+      errorEl.textContent = '';
+      try {
+        const levels = await loadLevels();
+        const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
+        const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
+        const extraChancePct = Number(document.getElementById('extraChance').value || 0);
+        let resourceCount = Number(document.getElementById('resourceCount').value);
+        const ascended = document.getElementById('ascended').value === 'true';
+        const batchOptions = Array.from(document.querySelectorAll('.batchOpt:checked')).map(el => Number(el.value)).sort((a, b) => b - a);
+
+        if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
+        if (!Number.isInteger(resourceCount) || resourceCount < 1) resourceCount = 1;
+        if (resourceCount > 1000) resourceCount = 1000;
+        if (!batchOptions.length) throw new Error('사용할 뽑기 종류를 하나 이상 선택하세요.');
+        document.getElementById('resourceCount').value = resourceCount;
+
+        const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);
+        const startCount = Number(stateVal & 0xFFFFFFFFn);
+        const result = optimize(initialSeed, startLevel, startCount, levels, extraChancePct, resourceCount, batchOptions);
+        if (!result.best) throw new Error('해당 자원 수를 선택한 뽑기 조합으로 정확히 사용할 수 없습니다. 예: 15뽑만 선택하고 자원 100개를 입력하면 불가능합니다.');
+
+        lastBest = result.best;
+        lastInitialSeed = initialSeed;
+        render(result.best, initialSeed, startLevel, startCount, resourceCount, result.stateCount, levels, extraChancePct, ascended);
+      } catch (err) {
+        const msg = err.message || String(err);
+        errorEl.textContent = msg;
+        document.getElementById('summary').innerHTML = `<div class="mini"><div class="k">오류</div><div class="v">${msg}</div></div>`;
+        document.getElementById('detailBody').innerHTML = '';
+        document.getElementById('routeText').textContent = '결과 없음';
+      }
+    }
+
+    function render(best, initialSeed, startLevel, startCount, resourceCount, stateCount, levels, extraChancePct, ascended) {
+      document.getElementById('summary').innerHTML = `
+        <div class="mini"><div class="k">기본 자원</div><div class="v">${resourceCount}개</div></div>
+        <div class="mini"><div class="k">최대 보너스</div><div class="v"><span class="bonus">${best.bonus}개</span></div></div>
+        <div class="mini"><div class="k">총 실제 소환</div><div class="v">${best.consumed}개</div></div>
+        <div class="mini"><div class="k">최종 Seed</div><div class="v code">${hex64(initialSeed + BigInt(best.consumed))}</div></div>
+        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1} / ${best.finalCount}</div></div>
+      `;
+
+      document.getElementById('routeText').innerHTML = `최적 루트: <span class="warn">${compactRoute(best.route)}</span> / 탐색 상태 수: ${stateCount}`;
+
+      lastDetailRows = buildDetailRows(best, initialSeed, startLevel, startCount, levels, extraChancePct, ascended);
+      filteredDetailRows = lastDetailRows;
+      renderDetailRows(filteredDetailRows);
+    }
+
+    function renderDetailRows(rows) {
+      document.getElementById('detailBody').innerHTML = rows.map((r, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td class="code">${hex64(r.seed)}</td>
+          <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}/${r.requiredCount}</td>
+          <td>${r.batchSize}뽑</td>
+          <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
+          <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
+          <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
+          <td>${r.mountName}</td>
+          <td>${statText(r.stats)}</td>
+          <td>${r.perfection.toFixed(1)}%</td>
+        </tr>
+      `).join('');
+      applyColumnVisibility();
+    }
+
+    function getVisibleColumnIndexes() {
+      const indexes = [0];
+      document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) indexes.push(Number(cb.dataset.col));
+      });
+      return indexes;
+    }
+
+    function applyColumnVisibility() {
+      const visible = new Set(getVisibleColumnIndexes());
+      document.querySelectorAll('table tr').forEach(row => {
+        Array.from(row.children).forEach((cell, idx) => {
+          cell.classList.toggle('hidden-col', !visible.has(idx));
+        });
+      });
+    }
+
+    function csvEscape(value) {
+      const s = String(value ?? '');
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+
+    function downloadBestCsv() {
+      if (!lastDetailRows.length) {
+        alert('저장할 결과가 없습니다. 먼저 계산하세요.');
+        return;
+      }
+      const headers = ['번호', '현재 Seed', '현재 Level', '현재 Count', '뽑기', '구분', '보너스 판정', '등급', '탈것명', '능력치', '완성도'];
+      const lines = [headers.map(csvEscape).join(',')];
+      const exportRows = filteredDetailRows.length ? filteredDetailRows : lastDetailRows;
+      exportRows.forEach((r, idx) => {
+        const values = [
+          idx + 1,
+          hex64(r.seed),
+          `Lv ${r.displayLevel + 1}`,
+          `Count ${r.displayCount}/${r.requiredCount}`,
+          `${r.batchSize}뽑`,
+          r.mode === 'normal' ? '기본' : '추가',
+          r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
+          RARITY_KOR[r.rarity] || r.rarity,
+          r.mountName,
+          statTextPlain(r.stats),
+          `${r.perfection.toFixed(1)}%`
+        ];
+        lines.push(values.map(csvEscape).join(','));
+      });
+      downloadCsv(lines, 'mount_bonus_route_detail');
+    }
+    function downloadCsv(lines, prefix) {
+      const csv = '\ufeff' + lines.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${prefix}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('runBtn').addEventListener('click', run);
+    document.getElementById('seed').addEventListener('paste', handleSeedStatePaste);
+    document.getElementById('state').addEventListener('paste', handleSeedStatePaste);
+    document.getElementById('csvBtn').addEventListener('click', downloadBestCsv);
+    document.getElementById('searchBtn').addEventListener('click', applySearch);
+    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applySearch();
+    });
+    document.querySelectorAll('#columnTools input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', applyColumnVisibility);
+    });
+    </script>
+</body>
+</html>
