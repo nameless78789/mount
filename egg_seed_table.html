@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Egg Summon Table Compare</title>
+  <title>알 소환 비교 테이블</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -132,14 +132,17 @@
       .summary { grid-template-columns: 1fr; }
       th, td { font-size: 12px; padding: 8px 6px; }
     }
-  </style>
+  
+.notice{margin-top:6px;font-size:0.9em;}
+</style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Egg Summon Table Compare</h1>
+    <h1>알 소환 비교 테이블</h1>
     <div class="desc">
-      기존 펫/알 기본 소환 테이블 보기와 보너스 소환 테이블 보기를 하나로 합친 비교표입니다. 같은 Seed에서 기본 소환 등급과 보너스 소환 등급을 한 줄에 함께 표시합니다. 패치 후 기준으로 스탯은 기본/보너스 소환일 때 동일하며, 펫 이름/유형은 출력에서 숨깁니다.
-    </div>
+Seed값에 대한 기본 소환 등급과 보너스 소환 등급을 한 줄에 함께 표시합니다. 패치 후 기준으로 스탯은 기본/보너스 소환일 때 동일하며, 펫 이름/유형은 출력에서 숨깁니다.
+<p class="notice">※ 12줄 HEX코드 중 7번째 줄이 펫 시드(Seed), 8번째 줄이 펫 레벨카운트(State) 값입니다. 2줄로 복사된 Seed와 State를 Seed칸에 붙여넣으면 자동으로 분리 입력됩니다.</p>
+</div>
 
     <div class="grid">
       <section class="card">
@@ -154,7 +157,7 @@
           </div>
           <div>
             <label>Extra Summon Chance (%)</label>
-            <input id="extraChance" type="number" step="0.01" value="0" />
+            <input id="extraChance" type="number" min="0" max="100" step="2" value="0" />
           </div>
           <div>
             <label>비교할 Seed 개수</label>
@@ -572,7 +575,7 @@
       const bonusHits = rows.filter(r => r.bonusTriggered).length;
       document.getElementById('summary').innerHTML = `
         <div class="mini"><div class="k">시작 Seed</div><div class="v code">${hex64(startSeed)}</div></div>
-        <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1}<br>${startCount}/${getSummonsRequiredForNext(startLevel, levels)} → Lv ${endLevel + 1}<br>${endCount}/${getSummonsRequiredForNext(endLevel, levels)}</div></div>
+        <div class="mini"><div class="k">Level / Count</div><div class="v">Lv ${startLevel + 1} ${startCount}/${getSummonsRequiredForNext(startLevel, levels)}<br>→ Lv ${endLevel + 1} ${endCount}/${getSummonsRequiredForNext(endLevel, levels)}</div></div>
         <div class="mini"><div class="k">비교 Seed</div><div class="v">${rows.length}개</div></div>
         <div class="mini"><div class="k">보너스 발동</div><div class="v"><span class="bonus">${bonusHits}개</span></div></div>
         <div class="mini"><div class="k">스탯 기준</div><div class="v">2개 고정</div></div>
