@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>탈것 소환 최적화 테이블</title>
+  <title>알 뽑기 최적화</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -28,6 +28,12 @@
     .wrap { max-width: 1280px; margin: 0 auto; }
     h1 { margin: 0 0 8px; font-size: 28px; }
     .desc { color: var(--muted); margin-bottom: 20px; line-height: 1.55; }
+    .note-small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
     .card {
       background: rgba(17, 24, 39, 0.9);
       border: 1px solid var(--line);
@@ -37,7 +43,7 @@
       margin-bottom: 16px;
     }
     label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
-    input, select, button {
+    input, button, select {
       width: 100%;
       border-radius: 10px;
       border: 1px solid var(--line);
@@ -83,7 +89,6 @@
     }
     .batch-row input { width: auto; padding: 0; }
     .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-    .note { font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
     .error { color: var(--danger); white-space: pre-wrap; margin-top: 12px; }
     .summary {
       display: grid;
@@ -156,27 +161,26 @@
       .row, .tools { grid-template-columns: 1fr; }
       .summary { grid-template-columns: 1fr; }
       label { font-size: 11px; }
-      input, select, button { font-size: 12px; padding: 8px 6px; }
+      input, button, select { font-size: 12px; padding: 8px 6px; }
       th, td { font-size: 12px; padding: 8px 6px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>탈것 소환 최적화 테이블</h1>
+    <h1>알 뽑기 최적화</h1>
     <div class="desc">
-      같은 자원량을 쓸 때 1뽑, 15뽑, 50뽑을 어떤 순서로 섞어야 보너스 소환이 가장 많이 나오는지 찾는 도구입니다.
-      예: 자원 100개 기준으로 1뽑 100번, 50뽑 2번, 1뽑 10번 + 15뽑 6번 같은 루트를 비교합니다.
-      <div class="note">
-        ※ 12줄 HEX코드 중 10번째 줄이 탈것 시드(Seed), 11번째 줄이 탈것 레벨카운트(State) 값입니다.<br>
-        2줄로 복사된 Seed와 State를 Seed칸에 붙여넣으면 자동으로 분리 입력됩니다.
+      같은 자원량을 사용할 때 1뽑, 15뽑, 50뽑을 어떤 순서로 섞어야 펫 보너스 소환이 가장 많이 발생하는지 계산하는 도구입니다.
+    
+      <div class="note-small">
+        ※ 12줄 HEX코드 중 7번째 줄이 펫 시드(Seed), 8번째 줄이 펫 레벨카운트(State) 값입니다. 2줄로 복사된 Seed와 State를 Seed칸에 붙여넣으면 자동으로 분리 입력됩니다.
       </div>
     </div>
 
     <section class="card">
       <div class="row">
         <div>
-          <label>Mount Seed (HEX16)</label>
+          <label>Pet Seed (HEX16)</label>
           <input id="seed" value="" spellcheck="false" placeholder="예: 1234567812345678" />
         </div>
         <div>
@@ -185,17 +189,17 @@
         </div>
         <div>
           <label>Extra Summon Chance (%)</label>
-          <input id="extraChance" type="number" min="0" max="100" step="2" value="0" />
+          <input id="extraChance" type="number" step="2" value="0" />
         </div>
         <div>
-          <label>사용할 기본 뽑기 자원</label>
-          <input id="resourceCount" type="number" min="1" max="2000" step="1" value="100" />
+          <label>사용할 뽑기 자원</label>
+          <input id="resourceCount" type="number" min="1" max="1000" step="1" value="100" />
         </div>
         <div>
           <label>승천 여부</label>
           <select id="ascended">
-            <option value="false" selected>기본 상태</option>
-            <option value="true">승천 상태</option>
+            <option value="false" selected>승천 전</option>
+            <option value="true">승천 후</option>
           </select>
         </div>
       </div>
@@ -207,8 +211,8 @@
       </div>
 
       <div class="hint">
-        Level/Count는 현재 소환 단계를 표시합니다. 예를 들어, 3/20 상태에서 소환할 경우 이번에 나오는 결과는 4/20번째 탈것입니다.<br>
-        승천 상태에서는 등급과 관계없이 모든 탈것의 스탯을 2개로 계산하며, 최대 비교 개수는 2000개까지 지원합니다.
+        Level/Count는 현재 소환 단계를 표시합니다. 예를 들어 3/20 상태에서 소환하면 이번 결과는 4/20번째 알에 해당합니다.<br>
+        최대 비교 개수는 뽑기 자원 1000개까지 지원합니다.
       </div>
       <button id="runBtn">최대 보너스 루트 찾기</button>
       <div id="error" class="error"></div>
@@ -228,7 +232,7 @@
       <div class="search-tools">
         <div>
           <label>검색</label>
-          <input id="searchInput" type="text" placeholder="Seed, 뽑기, 구분, 보너스, 등급, 탈것명, 능력치 검색" />
+          <input id="searchInput" type="text" placeholder="Seed, Level/Count, 뽑기, 구분, 보너스, 등급, 능력치 검색" />
         </div>
         <div>
           <label>&nbsp;</label>
@@ -236,15 +240,14 @@
         </div>
       </div>
       <div class="column-tools" id="columnTools">
-        <label><input type="checkbox" data-col="1" checked /> 뽑기</label>
-        <label><input type="checkbox" data-col="2" checked /> 현재 Seed</label>
-        <label><input type="checkbox" data-col="3" checked /> Level/Count</label>
+        <label><input type="checkbox" data-col="1" checked /> 현재 Seed</label>
+        <label><input type="checkbox" data-col="2" checked /> Level/Count</label>
+        <label><input type="checkbox" data-col="3" checked /> 뽑기</label>
         <label><input type="checkbox" data-col="4" checked /> 구분</label>
         <label><input type="checkbox" data-col="5" checked /> 보너스 판정</label>
         <label><input type="checkbox" data-col="6" checked /> 등급</label>
-        <label><input type="checkbox" data-col="7" checked /> 탈것명</label>
-        <label><input type="checkbox" data-col="8" checked /> 능력치</label>
-        <label><input type="checkbox" data-col="9" checked /> 완성도</label>
+        <label><input type="checkbox" data-col="7" checked /> 능력치</label>
+        <label><input type="checkbox" data-col="8" checked /> 완성도</label>
       </div>
       <div style="overflow:auto; max-height: 620px; border-radius: 12px; border: 1px solid var(--line);">
         <table>
@@ -257,7 +260,6 @@
               <th>구분</th>
               <th>보너스 판정</th>
               <th>등급</th>
-              <th>탈것명</th>
               <th>능력치</th>
               <th>완성도</th>
             </tr>
@@ -300,13 +302,13 @@
       "Attack Speed": "공격속도", "Skill Damage": "스킬 피해", "Skill Cooldown": "스킬 쿨", "Health": "체력"
     };
 
-    const MOUNT_NAMES = {
-      Common: ["수련잎", "백합잎", "갈색잎"],
-      Rare: ["말", "공룡", "게", "거북이"],
-      Epic: ["돼지", "염소"],
-      Legendary: ["자전거", "벌"],
-      Ultimate: ["킥보드", "드래곤"],
-      Mythic: ["원반", "보드"]
+    const DEFAULT_PET_IDS = {
+      Common: [0, 1, 2],
+      Rare: [0, 1, 2, 3],
+      Epic: [0, 1],
+      Legendary: [0, 1],
+      Ultimate: [0, 1],
+      Mythic: [0, 1]
     };
 
     class MetaplayPCG {
@@ -347,42 +349,18 @@
       return (v & U64_MASK).toString(16).toUpperCase().padStart(16, "0");
     }
 
-    function getRequiredCount(level, levels) {
-      if (!Array.isArray(levels) || levels.length === 0) return 999999999;
-      const idx = Math.min(level + 1, levels.length - 1);
-      return Number(levels[idx]?.SummonsRequired || 999999999);
-    }
-
-    function extractSeedStateFromText(text) {
-      const hexes = (text || '').replace(/0x/gi, '').match(/[0-9a-fA-F]{16}/g);
-      if (!hexes || hexes.length < 2) return null;
-      return {
-        seed: hexes[0].toUpperCase(),
-        state: hexes[1].toUpperCase()
-      };
-    }
-
-    function handleSeedStatePaste(e) {
-      const pasted = e.clipboardData?.getData('text') || '';
-      const parsed = extractSeedStateFromText(pasted);
-      if (!parsed) return;
-
-      e.preventDefault();
-      document.getElementById('seed').value = parsed.seed;
-      document.getElementById('state').value = parsed.state;
-    }
-
-    async function loadLevels() {
-      let resp;
+    async function loadConfigs() {
+      let eggResp;
       try {
-        resp = await fetch('./MountSummonConfig.json');
+        eggResp = await fetch('./EggSummonConfig.json');
       } catch (e) {
-        throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
+        throw new Error('EggSummonConfig.json 로드 실패: HTML과 같은 폴더에 EggSummonConfig.json이 있어야 합니다.');
       }
-      if (!resp.ok) throw new Error('MountSummonConfig.json 로드 실패: HTML과 같은 폴더에 MountSummonConfig.json이 있어야 합니다.');
-      const config = await resp.json();
-      if (!Array.isArray(config.Levels) || config.Levels.length === 0) throw new Error('MountSummonConfig.json의 Levels 배열이 비어 있습니다.');
-      return config.Levels;
+      if (!eggResp.ok) throw new Error('EggSummonConfig.json 로드 실패: HTML과 같은 폴더에 EggSummonConfig.json이 있어야 합니다.');
+      const eggConfig = await eggResp.json();
+      if (!Array.isArray(eggConfig.Levels) || eggConfig.Levels.length === 0) throw new Error('EggSummonConfig.json의 Levels 배열이 비어 있습니다.');
+
+      return { levels: eggConfig.Levels };
     }
 
     function bonusTriggeredAt(seed, extraChancePct) {
@@ -410,55 +388,74 @@
       return { rarity: "Common", lvlData: data };
     }
 
+    function getSummonsRequiredForNext(level, levels) {
+      // EggSummonConfig.json의 SummonsRequired는 "전 레벨 → 현재 레벨" 도달 필요횟수 기준입니다.
+      // 현재 Lv에서 다음 Lv로 넘어가기 위한 분모는 다음 레벨 행(level + 1)의 값을 사용합니다.
+      const nextIdx = Math.min(level + 1, levels.length - 1);
+      const fallbackIdx = Math.min(level, levels.length - 1);
+      return Number(levels[nextIdx]?.SummonsRequired || levels[fallbackIdx]?.SummonsRequired || 999999999);
+    }
+
+    function getSubstatCount(rarity, ascended) {
+      if (ascended) return 2;
+      return ["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1;
+    }
+
     function summonDetail(seed, level, count, levels, mode, extraChancePct, batchSize, ascended) {
       const pcg = new MetaplayPCG(seed);
       let bonusTriggered = false;
+      let consumed = 0;
+
       if (mode === 'normal') {
-        const bonusRaw = pcg.nextPcg32();
+        const bonusRaw = pcg.nextPcg32(); // rng1
+        consumed += 1;
         const chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
         bonusTriggered = bonusRaw < chanceRaw;
       }
 
-      const { rarity, lvlData } = rollRarity(pcg, level, levels);
-      const mountList = MOUNT_NAMES[rarity] || ['-'];
-      const mountId = pcg.nextInt(mountList.length);
-      const mountName = mountList[mountId] || '-';
-      pcg.nextGuid();
+      const { rarity } = rollRarity(pcg, level, levels); // normal: rng2, bonus: rng1
+      consumed += 1;
 
-      const numSubstats = ascended ? 2 : (["Legendary", "Ultimate", "Mythic"].includes(rarity) ? 2 : 1);
+      // 패치 후: 기본/보너스 모두 스탯 계산은 rng6~9를 사용.
+      // 펫ID 산식은 미확정이므로 펫ID/펫이름/유형은 출력에서 제외하고,
+      // 스탯 시작 위치를 rng6으로 맞추기 위해 rng5까지 소비합니다.
+      while (consumed < 5) {
+        pcg.nextPcg32();
+        consumed += 1;
+      }
+
+      const numSubstats = getSubstatCount(rarity, ascended);
       const availableStats = [...SUBSTATS_POOL];
       const stats = [];
+      let f64Sum = 0;
       for (let i = 0; i < numSubstats; i++) {
-        const statIdx = pcg.nextInt(availableStats.length);
+        const statIdx = pcg.nextInt(availableStats.length); // rng6, rng8
         const statName = availableStats[statIdx];
         availableStats.splice(statIdx, 1);
-        const f64 = pcg.nextF64();
-        stats.push({ name: statName, value: getSubstatValue(statName, f64) * 100 });
+        const f64 = pcg.nextF64(); // rng7, rng9
+        f64Sum += f64;
+        stats.push({ name: statName, value: getSubstatValue(statName, f64) * 100, f64 });
       }
 
       let nextLevel = level;
       let nextCount = count + 1;
-      const required = Number(lvlData.SummonsRequired || 999999999);
+      const required = getSummonsRequiredForNext(level, levels);
       if (nextCount >= required) {
         nextCount -= required;
         nextLevel += 1;
       }
-
-      const perfection = stats.length ? (stats.reduce((sum, s) => sum + ((s.value / 100 - SUBSTATS_INFO[s.name][0]) / (SUBSTATS_INFO[s.name][1] - SUBSTATS_INFO[s.name][0])), 0) / stats.length) * 100 : 0;
 
       return {
         seed,
         batchSize,
         displayLevel: level,
         displayCount: count + 1,
-        requiredCount: getRequiredCount(level, levels),
+        displayRequired: required,
         mode,
         bonusTriggered,
         rarity,
-        mountId,
-        mountName,
         stats,
-        perfection,
+        perfection: (f64Sum / numSubstats) * 100,
         nextLevel,
         nextCount
       };
@@ -505,11 +502,10 @@
         `${r.batchSize}뽑`,
         hex64(r.seed),
         `Lv ${r.displayLevel + 1}`,
-        `Count ${r.displayCount}/${r.requiredCount}`,
+        `${r.displayCount}/${r.displayRequired || '-'}`,
         r.mode === 'normal' ? '기본' : '추가',
         r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
         RARITY_KOR[r.rarity] || r.rarity,
-        r.mountName,
         statTextPlain(r.stats),
         `${r.perfection.toFixed(1)}%`
       ].join(' ').toLowerCase();
@@ -529,8 +525,7 @@
       let nextLevel = level;
       let nextCount = count;
       for (let i = 0; i < steps; i++) {
-        const lvlIdx = Math.min(nextLevel, levels.length - 1);
-        const required = Number(levels[lvlIdx].SummonsRequired || 999999999);
+        const required = getSummonsRequiredForNext(nextLevel, levels);
         nextCount += 1;
         if (nextCount >= required) {
           nextCount -= required;
@@ -624,20 +619,17 @@
       const errorEl = document.getElementById('error');
       errorEl.textContent = '';
       try {
-        const levels = await loadLevels();
+        const { levels } = await loadConfigs();
         const initialSeed = parseHex64(document.getElementById('seed').value, 'Seed');
         const stateVal = parseHex64(document.getElementById('state').value, 'Level/Count');
-        let extraChancePct = Number(document.getElementById('extraChance').value || 0);
-        let resourceCount = Number(document.getElementById('resourceCount').value);
+        const extraChancePct = Number(document.getElementById('extraChance').value || 0);
         const ascended = document.getElementById('ascended').value === 'true';
+        let resourceCount = Number(document.getElementById('resourceCount').value);
         const batchOptions = Array.from(document.querySelectorAll('.batchOpt:checked')).map(el => Number(el.value)).sort((a, b) => b - a);
 
-        if (!Number.isFinite(extraChancePct)) extraChancePct = 0;
-        if (extraChancePct < 0) extraChancePct = 0;
-        if (extraChancePct > 100) extraChancePct = 100;
-        document.getElementById('extraChance').value = extraChancePct;
+        if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
         if (!Number.isInteger(resourceCount) || resourceCount < 1) resourceCount = 1;
-        if (resourceCount > 2000) resourceCount = 2000;
+        if (resourceCount > 1000) resourceCount = 1000;
         if (!batchOptions.length) throw new Error('사용할 뽑기 종류를 하나 이상 선택하세요.');
         document.getElementById('resourceCount').value = resourceCount;
 
@@ -664,7 +656,8 @@
         <div class="mini"><div class="k">최대 보너스</div><div class="v"><span class="bonus">${best.bonus}개</span></div></div>
         <div class="mini"><div class="k">총 실제 소환</div><div class="v">${best.consumed}개</div></div>
         <div class="mini"><div class="k">최종 Seed</div><div class="v code">${hex64(initialSeed + BigInt(best.consumed))}</div></div>
-        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1} / ${best.finalCount}</div></div>
+        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1}<br>${best.finalCount}/${getSummonsRequiredForNext(best.finalLevel, levels)}</div></div>
+        <div class="mini"><div class="k">승천 여부</div><div class="v">${ascended ? '승천 후' : '승천 전'}</div></div>
       `;
 
       document.getElementById('routeText').innerHTML = `최적 루트: <span class="warn">${compactRoute(best.route)}</span> / 탐색 상태 수: ${stateCount}`;
@@ -679,12 +672,11 @@
         <tr>
           <td>${idx + 1}</td>
           <td class="code">${hex64(r.seed)}</td>
-          <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}/${r.requiredCount}</td>
+          <td>Lv ${r.displayLevel + 1}<br>${r.displayCount}/${r.displayRequired || '-'}</td>
           <td>${r.batchSize}뽑</td>
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
           <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
-          <td>${r.mountName}</td>
           <td>${statText(r.stats)}</td>
           <td>${r.perfection.toFixed(1)}%</td>
         </tr>
@@ -719,26 +711,37 @@
         alert('저장할 결과가 없습니다. 먼저 계산하세요.');
         return;
       }
-      const headers = ['번호', '현재 Seed', '현재 Level', '현재 Count', '뽑기', '구분', '보너스 판정', '등급', '탈것명', '능력치', '완성도'];
-      const lines = [headers.map(csvEscape).join(',')];
+      const allHeaders = ['번호', '현재 Seed', '현재 Level', '현재 Count/필요횟수', '뽑기', '구분', '보너스 판정', '등급', '능력치', '완성도'];
+      const visibleIndexes = getVisibleColumnIndexes();
+      const exportIndexes = [];
+      visibleIndexes.forEach(idx => {
+        if (idx === 2) {
+          exportIndexes.push(2, 3);
+        } else if (idx > 2) {
+          exportIndexes.push(idx + 1);
+        } else {
+          exportIndexes.push(idx);
+        }
+      });
+
+      const lines = [exportIndexes.map(i => csvEscape(allHeaders[i])).join(',')];
       const exportRows = filteredDetailRows.length ? filteredDetailRows : lastDetailRows;
       exportRows.forEach((r, idx) => {
-        const values = [
+        const allValues = [
           idx + 1,
           hex64(r.seed),
           `Lv ${r.displayLevel + 1}`,
-          `Count ${r.displayCount}/${r.requiredCount}`,
+          `Count ${r.displayCount}/${r.displayRequired || '-'}`,
           `${r.batchSize}뽑`,
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
           RARITY_KOR[r.rarity] || r.rarity,
-          r.mountName,
           statTextPlain(r.stats),
           `${r.perfection.toFixed(1)}%`
         ];
-        lines.push(values.map(csvEscape).join(','));
+        lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
       });
-      downloadCsv(lines, 'mount_bonus_route_detail');
+      downloadCsv(lines, 'egg_bonus_route_detail');
     }
     function downloadCsv(lines, prefix) {
       const csv = '\ufeff' + lines.join('\n');
@@ -753,9 +756,29 @@
       URL.revokeObjectURL(url);
     }
 
+    
+    function extractHexTokens(text) {
+      return String(text || '').match(/[0-9a-fA-F]{1,16}/g) || [];
+    }
+
+    function installSeedStatePasteSplit() {
+      const seedEl = document.getElementById('seed');
+      const stateEl = document.getElementById('state');
+      const handler = (e) => {
+        const text = e.clipboardData?.getData('text') || '';
+        const tokens = extractHexTokens(text);
+        if (tokens.length >= 2) {
+          e.preventDefault();
+          seedEl.value = tokens[0].toUpperCase();
+          stateEl.value = tokens[1].toUpperCase();
+        }
+      };
+      seedEl.addEventListener('paste', handler);
+      stateEl.addEventListener('paste', handler);
+    }
+
+    installSeedStatePasteSplit();
     document.getElementById('runBtn').addEventListener('click', run);
-    document.getElementById('seed').addEventListener('paste', handleSeedStatePaste);
-    document.getElementById('state').addEventListener('paste', handleSeedStatePaste);
     document.getElementById('csvBtn').addEventListener('click', downloadBestCsv);
     document.getElementById('searchBtn').addEventListener('click', applySearch);
     document.getElementById('searchInput').addEventListener('keydown', (e) => {

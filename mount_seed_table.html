@@ -162,7 +162,7 @@
           </div>
           <div>
             <label>비교할 Seed 개수</label>
-            <input id="scanCount" type="number" min="1" max="1000" step="1" value="50" />
+            <input id="scanCount" type="number" min="1" max="2000" step="1" value="50" />
           </div>
           <div>
             <label>승천 여부</label>
@@ -174,7 +174,7 @@
         </div>
         <div class="hint">
           Level/Count는 현재 소환 단계를 표시합니다. 예를 들어, 3/20 상태에서 소환할 경우 이번에 나오는 결과는 4/20번째 탈것입니다.<br>
-          승천 상태에서는 등급과 관계없이 모든 탈것의 스탯을 2개로 계산하며, 최대 비교 개수는 1000개까지 지원합니다.
+          승천 상태에서는 등급과 관계없이 모든 탈것의 스탯을 2개로 계산하며, 최대 비교 개수는 2000개까지 지원합니다.
         </div>
         <div class="action-row">
           <button id="runBtn">통합 테이블 생성</button>
@@ -488,7 +488,7 @@
         document.getElementById('extraChance').value = extraChancePct;
 
         if (!Number.isInteger(scanCount) || scanCount < 1) scanCount = 1;
-        if (scanCount > 1000) scanCount = 1000;
+        if (scanCount > 2000) scanCount = 2000;
         document.getElementById('scanCount').value = scanCount;
 
         const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);

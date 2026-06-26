@@ -193,7 +193,7 @@
         </div>
         <div>
           <label>사용할 뽑기 자원</label>
-          <input id="resourceCount" type="number" min="1" max="1000" step="1" value="100" />
+          <input id="resourceCount" type="number" min="1" max="2000" step="1" value="100" />
         </div>
         <div>
           <label>승천 여부</label>
@@ -212,7 +212,7 @@
 
       <div class="hint">
         Level/Count는 현재 소환 단계를 표시합니다. 예를 들어 3/20 상태에서 소환하면 이번 결과는 4/20번째 알에 해당합니다.<br>
-        최대 비교 개수는 뽑기 자원 1000개까지 지원합니다.
+        최대 비교 개수는 뽑기 자원 2000개까지 지원합니다.
       </div>
       <button id="runBtn">최대 보너스 루트 찾기</button>
       <div id="error" class="error"></div>
@@ -629,7 +629,7 @@
 
         if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
         if (!Number.isInteger(resourceCount) || resourceCount < 1) resourceCount = 1;
-        if (resourceCount > 1000) resourceCount = 1000;
+        if (resourceCount > 2000) resourceCount = 2000;
         if (!batchOptions.length) throw new Error('사용할 뽑기 종류를 하나 이상 선택하세요.');
         document.getElementById('resourceCount').value = resourceCount;
 

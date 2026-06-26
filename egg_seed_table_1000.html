@@ -161,12 +161,12 @@ Seed값에 대한 기본 소환 등급과 보너스 소환 등급을 한 줄에 
           </div>
           <div>
             <label>비교할 Seed 개수</label>
-            <input id="scanCount" type="number" min="1" max="2000" step="1" value="50" />
+            <input id="scanCount" type="number" min="1" max="1000" step="1" value="50" />
           </div>
         </div>
         <div class="hint">
           Level/Count는 현재 소환 단계를 표시합니다. 예를 들어, 3/20 상태에서 소환할 경우 이번에 나오는 결과는 4/20번째 알입니다.<br>
-          스탯 개수는 승천 기준으로 표시하여, 항상 2개로 처리합니다. 최대 비교 개수는 2000개까지 지원합니다.
+          스탯 개수는 승천 기준으로 표시하여, 항상 2개로 처리합니다. 최대 비교 개수는 1000개까지 지원합니다.
         </div>
         <div class="action-row">
           <button id="runBtn">통합 테이블 생성</button>
@@ -527,7 +527,7 @@ Seed값에 대한 기본 소환 등급과 보너스 소환 등급을 한 줄에 
           throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
         }
         if (!Number.isInteger(scanCount) || scanCount < 1) scanCount = 1;
-        if (scanCount > 2000) scanCount = 2000;
+        if (scanCount > 1000) scanCount = 1000;
         document.getElementById('scanCount').value = scanCount;
 
         const startLevel = Number((stateVal >> 32n) & 0xFFFFFFFFn);
