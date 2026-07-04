@@ -232,7 +232,7 @@
       <div class="search-tools">
         <div>
           <label>검색</label>
-          <input id="searchInput" type="text" placeholder="Seed, Level/Count, 뽑기, 구분, 보너스, 등급, 능력치 검색" />
+          <input id="searchInput" type="text" placeholder="Seed, Level/Count, 뽑기, 구분, 보너스, 등급, 펫, 능력치 검색" />
         </div>
         <div>
           <label>&nbsp;</label>
@@ -246,8 +246,9 @@
         <label><input type="checkbox" data-col="4" checked /> 구분</label>
         <label><input type="checkbox" data-col="5" checked /> 보너스 판정</label>
         <label><input type="checkbox" data-col="6" checked /> 등급</label>
-        <label><input type="checkbox" data-col="7" checked /> 능력치</label>
-        <label><input type="checkbox" data-col="8" checked /> 완성도</label>
+        <label><input type="checkbox" data-col="7" checked /> 펫 이름</label>
+        <label><input type="checkbox" data-col="8" checked /> 능력치</label>
+        <label><input type="checkbox" data-col="9" checked /> 완성도</label>
       </div>
       <div style="overflow:auto; max-height: 620px; border-radius: 12px; border: 1px solid var(--line);">
         <table>
@@ -260,6 +261,7 @@
               <th>구분</th>
               <th>보너스 판정</th>
               <th>등급</th>
+              <th>펫 이름</th>
               <th>능력치</th>
               <th>완성도</th>
             </tr>
@@ -279,6 +281,14 @@
 
     const RARITIES = ["Common", "Rare", "Epic", "Legendary", "Ultimate", "Mythic"];
     const RARITY_KOR = { Common: "일반", Rare: "희귀", Epic: "서사", Legendary: "전설", Ultimate: "궁극", Mythic: "신화" };
+    const PET_NAMES = {
+      Common: ["닭", "개", "고양이", "달팽이", "쥐", "거북이"],
+      Rare: ["고슴도치", "곰", "타조", "거미", "전갈"],
+      Epic: ["참새", "검치호", "유니콘", "호랑이", "판다"],
+      Legendary: ["뱀", "케르베로스", "키츠네"],
+      Ultimate: ["토끼", "나무", "사슴"],
+      Mythic: ["용", "지니", "타이거"]
+    };
     const SUBSTATS_INFO = {
       "Critical Chance": [0.01, 0.12],
       "Critical Damage": [0.01, 0.80],
@@ -388,6 +398,16 @@
       return { rarity: "Common", lvlData: data };
     }
 
+    function rollPetName(seed, rarity) {
+      const list = PET_NAMES[rarity] || [];
+      if (!list.length) return "-";
+      // 펫 이름/ID는 같은 Seed의 RNG1 raw 값을 재사용합니다.
+      const pcg = new MetaplayPCG(seed);
+      const raw = pcg.nextPcg32();
+      const idx = ((raw >>> 1) & 0x7FFFFFFF) % list.length;
+      return list[idx] || "-";
+    }
+
     function getSummonsRequiredForNext(level, levels) {
       // EggSummonConfig.json의 SummonsRequired는 "전 레벨 → 현재 레벨" 도달 필요횟수 기준입니다.
       // 현재 Lv에서 다음 Lv로 넘어가기 위한 분모는 다음 레벨 행(level + 1)의 값을 사용합니다.
@@ -414,6 +434,7 @@
       }
 
       const { rarity } = rollRarity(pcg, level, levels); // normal: rng2, bonus: rng1
+      const petName = rollPetName(seed, rarity);
       consumed += 1;
 
       // 패치 후: 기본/보너스 모두 스탯 계산은 rng6~9를 사용.
@@ -469,6 +490,7 @@
         mode,
         bonusTriggered,
         rarity,
+        petName,
         stats,
         perfection: (f64Sum / numSubstats) * 100,
         nextLevel,
@@ -521,6 +543,7 @@
         r.mode === 'normal' ? '기본' : '추가',
         r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
         RARITY_KOR[r.rarity] || r.rarity,
+        r.petName,
         statTextPlain(r.stats),
         `${r.perfection.toFixed(1)}%`
       ].join(' ').toLowerCase();
@@ -692,6 +715,7 @@
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
           <td class="rarity-${r.rarity}"><b>${RARITY_KOR[r.rarity] || r.rarity}</b></td>
+          <td>${r.petName || '-'}</td>
           <td>${statText(r.stats)}</td>
           <td>${r.perfection.toFixed(1)}%</td>
         </tr>
@@ -726,7 +750,7 @@
         alert('저장할 결과가 없습니다. 먼저 계산하세요.');
         return;
       }
-      const allHeaders = ['번호', '현재 Seed', '현재 Level', '현재 Count/필요횟수', '뽑기', '구분', '보너스 판정', '등급', '능력치', '완성도'];
+      const allHeaders = ['번호', '현재 Seed', '현재 Level', '현재 Count/필요횟수', '뽑기', '구분', '보너스 판정', '등급', '펫 이름', '능력치', '완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -751,6 +775,7 @@
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
           RARITY_KOR[r.rarity] || r.rarity,
+          r.petName || '-',
           statTextPlain(r.stats),
           `${r.perfection.toFixed(1)}%`
         ];

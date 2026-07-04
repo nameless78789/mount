@@ -140,7 +140,7 @@
   <div class="wrap">
     <h1>알 소환 비교 테이블</h1>
     <div class="desc">
-기존 펫/알 기본 소환 테이블 보기와 보너스 소환 테이블 보기를 하나로 합친 비교표입니다. 같은 Seed에서 기본 소환 등급과 보너스 소환 등급을 한 줄에 함께 표시합니다. 패치 후 기준으로 스탯은 기본/보너스 소환일 때 동일하며, 펫 이름/유형은 출력에서 숨깁니다.
+기존 펫/알 기본 소환 테이블 보기와 보너스 소환 테이블 보기를 하나로 합친 비교표입니다. 같은 Seed에서 기본 소환 등급과 보너스 소환 등급을 한 줄에 함께 표시합니다. 패치 후 기준으로 스탯은 기본/보너스 소환일 때 동일하며, RNG1 기준으로 계산한 펫 이름도 함께 표시합니다.
 <p class="notice">※ 12줄 HEX코드 중 7번째 줄이 펫 시드(Seed), 8번째 줄이 펫 레벨카운트(State) 값입니다. 2줄로 복사된 Seed와 State를 Seed칸에 붙여넣으면 자동으로 분리 입력됩니다.</p>
 </div>
 
@@ -179,7 +179,7 @@
         <div class="search-tools">
           <div>
             <label>검색</label>
-            <input id="searchInput" type="text" placeholder="Seed, 등급, 스탯 검색" />
+            <input id="searchInput" type="text" placeholder="Seed, 펫, 등급, 스탯 검색" />
           </div>
           <div>
             <label>&nbsp;</label>
@@ -195,9 +195,11 @@
           <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
           <label><input type="checkbox" data-col="3" checked /> 보너스판정</label>
           <label><input type="checkbox" data-col="4" checked /> 기본 등급</label>
-          <label><input type="checkbox" data-col="5" checked /> 보너스 등급</label>
-          <label><input type="checkbox" data-col="6" checked /> 스탯</label>
-          <label><input type="checkbox" data-col="7" checked /> 완성도</label>
+          <label><input type="checkbox" data-col="5" checked /> 기본 펫</label>
+          <label><input type="checkbox" data-col="6" checked /> 보너스 등급</label>
+          <label><input type="checkbox" data-col="7" checked /> 보너스 펫</label>
+          <label><input type="checkbox" data-col="8" checked /> 스탯</label>
+          <label><input type="checkbox" data-col="9" checked /> 완성도</label>
         </div>
         <div class="table-wrap" style="overflow:auto; max-height: 720px; border-radius: 12px; border: 1px solid var(--line);">
           <table>
@@ -208,7 +210,9 @@
                 <th>현재 Level/Count</th>
                 <th>보너스판정</th>
                 <th>기본 등급</th>
+                <th>기본 펫</th>
                 <th>보너스 등급</th>
+                <th>보너스 펫</th>
                 <th>스탯</th>
                 <th>완성도</th>
               </tr>
@@ -390,9 +394,9 @@
       for (const rarity of RARITIES) {
         const chance = Number(data[rarity] || 0);
         acc += Math.round(chance * U32);
-        if (raw < acc) return { rarity, lvlData: data };
+        if (raw < acc) return { rarity, lvlData: data, raw };
       }
-      return { rarity: "Common", lvlData: data };
+      return { rarity: "Common", lvlData: data, raw };
     }
 
     function getSummonsRequiredForNext(level, levels) {
@@ -419,13 +423,20 @@
     }
 
     function petDisplayHtml(name, type) {
-      const typeText = type && type !== '-' ? `<br><span class="muted-small">${type}</span>` : '';
-      return `<b>${name || '-'}</b>${typeText}`;
+      return `<b>${name || '-'}</b>`;
     }
 
     function petDisplayPlain(name, type) {
-      const typeText = type && type !== '-' ? ` / ${type}` : '';
-      return `${name || '-'}${typeText}`;
+      return `${name || '-'}`;
+    }
+
+    function pickPetByRaw(raw, rarity, petsByRarity) {
+      const availablePets = petsByRarity[rarity] || [];
+      if (!availablePets.length) return { id: '-', key: '-', name: '-', type: '', typeKor: '' };
+
+      const posVal = (raw >>> 1) & 0x7FFFFFFF;
+      const petIdx = posVal % availablePets.length;
+      return availablePets[petIdx] || { id: '-', key: '-', name: '-', type: '', typeKor: '' };
     }
 
     function consumePcg(pcg, count) {
@@ -440,13 +451,21 @@
       // - 기본 소환: PCG1 = 보너스 판정, PCG2 = 등급, PCG6~9 = 스탯
       // - 보너스 소환: PCG1 = 등급, PCG6~9 = 스탯
       // 따라서 등급 판정 이후 스탯 시작 위치를 양쪽 모두 PCG6으로 맞춘다.
+      let petRaw = 0;
+
       if (mode === "normal") {
         const bonusRaw = pcg.nextPcg32(); // PCG1
+        petRaw = bonusRaw;
         const chanceRaw = Math.round((Number(extraChancePct) / 100) * U32);
         bonusTriggered = bonusRaw < chanceRaw;
       }
 
-      const { rarity, lvlData } = rollRarity(pcg, level, levels); // normal=PCG2, bonus=PCG1
+      const { rarity, lvlData, raw: rarityRaw } = rollRarity(pcg, level, levels); // normal=PCG2, bonus=PCG1
+      if (mode !== "normal") petRaw = rarityRaw;
+
+      const selectedPet = pickPetByRaw(petRaw, rarity, petsByRarity);
+      const petName = getPetName(selectedPet, rarity);
+      const petType = getPetType(selectedPet);
 
       if (mode === "normal") {
         consumePcg(pcg, 3); // PCG3~5 더미 소비
@@ -497,10 +516,10 @@
         displayCount: count + 1,
         bonusTriggered,
         rarity,
-        petId: '',
-        petKey: '',
-        petName: '',
-        petType: '',
+        petId: selectedPet.id,
+        petKey: selectedPet.key,
+        petName,
+        petType,
         stats,
         perfection: (f64Sum / numSubstats) * 100,
         nextLevel,
@@ -606,8 +625,12 @@
         count: `Count ${r.displayCount}/${r.required || '-'}`,
         statePlain: `Lv ${r.displayLevel + 1} ${r.displayCount}/${r.required || '-'}`,
         bonus: r.bonusTriggered ? '발동' : '-',
+        normalPet: petDisplayHtml(r.normal.petName, r.normal.petType),
+        normalPetPlain: petDisplayPlain(r.normal.petName, r.normal.petType),
         normalRarity: RARITY_KOR[r.normal.rarity] || r.normal.rarity,
         normalRarityKey: r.normal.rarity,
+        bonusPet: petDisplayHtml(r.bonus.petName, r.bonus.petType),
+        bonusPetPlain: petDisplayPlain(r.bonus.petName, r.bonus.petType),
         bonusRarity: RARITY_KOR[r.bonus.rarity] || r.bonus.rarity,
         bonusRarityKey: r.bonus.rarity,
         stats: statText(r.normal.stats),
@@ -626,7 +649,9 @@
             <td>${d.level}<br>${d.count}</td>
             <td>${d.bonus === '발동' ? '<span class="bonus">발동</span>' : '-'}</td>
             <td class="rarity-${d.normalRarityKey}"><b>${d.normalRarity}</b></td>
+            <td>${d.normalPet}</td>
             <td class="rarity-${d.bonusRarityKey}"><b>${d.bonusRarity}</b></td>
+            <td>${d.bonusPet}</td>
             <td>${d.stats}</td>
             <td>${d.perfection}</td>
           </tr>
@@ -679,7 +704,7 @@
         return;
       }
 
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 등급', '보너스 등급', '스탯', '완성도'];
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 등급', '기본 펫', '보너스 등급', '보너스 펫', '스탯', '완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -696,7 +721,7 @@
 
       exportRows.forEach((r, idx) => {
         const d = rowToDisplay(r, idx);
-        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalRarity, d.bonusRarity, d.statsPlain, d.perfection];
+        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalRarity, d.normalPetPlain, d.bonusRarity, d.bonusPetPlain, d.statsPlain, d.perfection];
         lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
       });
 
