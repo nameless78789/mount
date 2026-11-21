@@ -63,6 +63,28 @@
       gap: 16px;
     }
 
+    .patch-banner {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-left: 4px solid #60a5fa;
+      border-radius: 10px;
+      background: rgba(96,165,250,0.12);
+    }
+
+    .patch-banner .title{
+      font-size:15px;
+      font-weight:700;
+      color:#ffffff;
+      margin-bottom:4px;
+    }
+
+    .patch-banner .text{
+      font-size:13px;
+      color:#d1d5db;
+      line-height:1.5;
+    }
+
+
     .tool-card {
       display: block;
       padding: 20px;
@@ -107,19 +129,6 @@
       font-size: 14px;
     }
 
-    .update-section {
-      margin-top: 30px;
-      padding-top: 24px;
-      border-top: 1px solid var(--line);
-    }
-
-    .update-heading {
-      margin: 0 0 18px;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-    }
-
     .footer-note {
       margin-top: 18px;
       color: var(--muted);
@@ -144,9 +153,74 @@
         펫과 탈것 소환 결과를 확인하고, 보너스 발생 구간과 최적 소환 전략을 분석하는 도구 모음입니다.
         사용할 기능을 선택하세요.
       </p>
+
+      <div class="patch-banner">
+        <div class="title">📢 2026.07.01 게임 패치 반영</div>
+        <div class="text">근접 피해와 원거리 피해 옵션이 동시에 등장하지 않도록 변경되었습니다.</div>
+      </div>
     </section>
 
+    <!-- 2026. 11. 업데이트 버전 테스트 메뉴 -->
+    <section style="margin-top: 32px;">
+      <h2 style="font-size: 22px; margin: 0 0 12px;">2026. 11. 업데이트 버전 (테스트 중)</h2>
+      <div class="patch-banner" style="margin-top: 0; margin-bottom: 16px;">
+        <div class="title">📢 2026. 11. 게임 패치 대응 버전 (테스트 중)</div>
+        <div class="text">새로운 승천 단계와 소환 등급, 레벨 확장 등을 반영한 테스트 버전입니다. 실제 게임 결과와 차이가 있을 수 있으므로 참고용으로 이용해 주세요. 기존 버전은 아래 메뉴에서 계속 이용할 수 있습니다.</div>
+      </div>
+      <div class="grid">
+        <a class="tool-card" href="./forgemaster_202611/seed_progress_tracker.html" target="_blank" rel="noopener noreferrer">
+          <span class="badge">Seed</span>
+          <h2 class="tool-title">시드 추적기</h2>
+          <p class="tool-desc">과거 Seed와 현재 Level/Count를 기준으로 현재 Seed와 증가량을 추적합니다.</p>
+        </a>
+        <a class="tool-card" href="./forgemaster_202611/pet_egg_inventory.html" target="_blank" rel="noopener noreferrer">
+          <span class="badge">Pet Inventory</span>
+          <h2 class="tool-title">보유 알 확인</h2>
+          <p class="tool-desc">보유 중인 알의 데이터를 확인합니다.</p>
+        </a>
+        <a class="tool-card" href="./forgemaster_202611/egg_seed_table_updated.html" target="_blank" rel="noopener noreferrer">
+          <span class="badge">Pet</span>
+          <h2 class="tool-title">알 비교 테이블</h2>
+          <p class="tool-desc">2026. 11. 업데이트 버전의 알 소환 결과를 확인합니다.</p>
+        </a>
+        <a class="tool-card" href="./forgemaster_202611/egg_bonus_optimizer_updated.html" target="_blank" rel="noopener noreferrer">
+          <span class="badge">Pet Bonus</span>
+          <h2 class="tool-title">알 최적화</h2>
+          <p class="tool-desc">2026. 11. 업데이트 버전의 알 소환 전략을 분석합니다.</p>
+        </a>
+        <a class="tool-card" href="./forgemaster_202611/mount_seed_table_updated.html" target="_blank" rel="noopener noreferrer">
+          <span class="badge">Mount</span>
+          <h2 class="tool-title">탈것 비교 테이블</h2>
+          <p class="tool-desc">2026. 11. 업데이트 버전의 탈것 소환 결과를 확인합니다.</p>
+        </a>
+        <a class="tool-card" href="./forgemaster_202611/mount_bonus_optimizer_updated.html" target="_blank" rel="noopener noreferrer">
+          <span class="badge">Mount Bonus</span>
+          <h2 class="tool-title">탈것 최적화</h2>
+          <p class="tool-desc">2026. 11. 업데이트 버전의 탈것 소환 전략을 분석합니다.</p>
+        </a>
+      </div>
+    </section>
+
+
+    <section style="margin-top: 32px;">
+      <h2 style="font-size: 22px; margin: 0 0 16px;">기존 버전</h2>
     <section class="grid">
+      <a class="tool-card" href="./seed_progress_tracker.html" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Seed</span>
+        <h2 class="tool-title">시드 추적기</h2>
+        <p class="tool-desc">
+          과거 Seed와 현재 Level/Count를 기준으로 현재 Seed와 증가량을 추적합니다.
+        </p>
+      </a>
+
+      <a class="tool-card" href="./skill_seed_table.html" target="_blank" rel="noopener noreferrer">
+        <span class="badge">Skill</span>
+        <h2 class="tool-title">스킬 시드 테이블</h2>
+        <p class="tool-desc">
+          스킬 Seed를 기준으로 소환 결과를 테이블 형태로 확인합니다.
+        </p>
+      </a>
+
       <a class="tool-card" href="./egg_seed_table.html" target="_blank" rel="noopener noreferrer">
         <span class="badge">Pet</span>
         <h2 class="tool-title">펫 시드 테이블</h2>
@@ -178,48 +252,11 @@
           제한된 비용으로 탈것 소환 개수를 최대화할 수 있는 선택지를 계산합니다.
         </p>
       </a>
-
-      <a class="tool-card" href="./seed_progress_tracker.html" target="_blank" rel="noopener noreferrer">
-        <span class="badge">Seed</span>
-        <h2 class="tool-title">시드 추적기</h2>
-        <p class="tool-desc">
-          과거 Seed와 현재 Level/Count를 기준으로 현재 Seed와 증가량을 추적합니다.
-        </p>
-      </a>
-
     </section>
-
-    <section class="update-section" aria-labelledby="update-heading">
-      <h2 class="update-heading" id="update-heading">2026. 11. 업데이트 버전 (테스트 중)</h2>
-      <div class="grid">
-        <a class="tool-card" href="./forgemaster_202611/egg_seed_table_updated.html" target="_blank" rel="noopener noreferrer">
-          <span class="badge">Pet · Updated</span>
-          <h2 class="tool-title">알 시드 테이블</h2>
-          <p class="tool-desc">업데이트된 알 소환 결과를 시드별로 확인합니다.</p>
-        </a>
-
-        <a class="tool-card" href="./forgemaster_202611/egg_bonus_optimizer_updated.html" target="_blank" rel="noopener noreferrer">
-          <span class="badge">Pet Bonus · Updated</span>
-          <h2 class="tool-title">알 최적화 테이블</h2>
-          <p class="tool-desc">업데이트된 알 소환 보너스와 최적 소환 전략을 분석합니다.</p>
-        </a>
-
-        <a class="tool-card" href="./forgemaster_202611/mount_seed_table_updated.html" target="_blank" rel="noopener noreferrer">
-          <span class="badge">Mount · Updated</span>
-          <h2 class="tool-title">탈것 시드 테이블</h2>
-          <p class="tool-desc">업데이트된 탈것 소환 결과를 시드별로 확인합니다.</p>
-        </a>
-
-        <a class="tool-card" href="./forgemaster_202611/mount_bonus_optimizer_updated.html" target="_blank" rel="noopener noreferrer">
-          <span class="badge">Mount Bonus · Updated</span>
-          <h2 class="tool-title">탈것 최적화 테이블</h2>
-          <p class="tool-desc">업데이트된 탈것 소환 보너스와 최적 소환 전략을 분석합니다.</p>
-        </a>
-      </div>
     </section>
 
     <div class="footer-note">
-      각 도구는 해당 HTML 파일과 같은 폴더의 JSON 데이터 파일을 사용합니다.
+      각 도구는 같은 폴더의 JSON 데이터 파일을 사용합니다.
     </div>
   </main>
 </body>
