@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>펫 · 알 보유 목록</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1320;--panel:#171f31;--line:#2c3850;--txt:#e9eefb;--sub:#9daac3;--blue:#5d9dff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 system-ui,'Malgun Gothic',sans-serif}
+main{max-width:1500px;margin:auto;padding:25px 22px 60px}h1{font-size:25px;margin:0 0 5px}.muted{color:var(--sub)}.intro{margin:0 0 22px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:17px;margin-bottom:16px}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.topline h2{font-size:17px;margin:0}
+button,select,input,textarea{font:inherit}button{cursor:pointer;background:#263753;border:1px solid #405474;color:#e8f0ff;border-radius:8px;padding:9px 13px}
+button.primary{background:#2269c5;border-color:#398bfa;color:white}button.active{background:#285ba0;border-color:#70b2ff}
+button:hover{filter:brightness(1.15)}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:13px}
+.field{display:flex;flex-direction:column;gap:5px}.field label{color:var(--sub);font-size:12px}
+select,input[type=search]{background:#10192a;color:var(--txt);border:1px solid #394b67;border-radius:8px;padding:9px;min-width:150px}
+.option-filter-head{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-top:18px}.match-buttons{display:flex;gap:5px}.match-buttons button{min-width:64px;padding:9px 14px}.match-buttons button.active{background:#285ba0;border-color:#70b2ff;color:#fff;font-weight:700}.stats-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{display:inline-flex;gap:6px;align-items:center;background:#111a2b;border:1px solid #34435c;padding:7px 10px;border-radius:30px;cursor:pointer;user-select:none}
+.pill:has(input:checked){background:#244b78;border-color:#64a4f8}.pill input{accent-color:#76adff}
+.summary{display:flex;gap:9px;flex-wrap:wrap}.count{background:#101a2c;border:1px solid #314260;padding:7px 12px;border-radius:9px}
+.group-head{display:flex;align-items:center;gap:10px;margin:22px 0 11px}.group-head h2{margin:0;font-size:18px}.group-head .muted{font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(5,175px);gap:12px;width:max-content}.hatch-grid{grid-template-columns:repeat(4,175px)}.empty-slot{border:1px dashed #4b5d7a;border-radius:12px;color:#91a1bf;padding:20px;text-align:center;min-height:170px}.empty-slot div{margin-top:45px}.cards-scroll{overflow-x:auto;padding-bottom:10px;max-width:100%}
+.item{background:#172237;border:1px solid #35435b;border-radius:12px;padding:12px;min-width:0;position:relative}
+.item .index{position:absolute;top:9px;left:10px;color:#8c9bb8;font-size:11px}
+.item .tags{position:absolute;right:9px;top:8px;display:flex;gap:4px}.tag{background:#25344f;border-radius:5px;font-size:10px;padding:2px 5px}
+.art{width:65px;height:65px;margin:8px auto 8px;display:flex;align-items:center;justify-content:center;font-size:38px;border:2px solid #66758f;border-radius:13px;background:linear-gradient(145deg,#2a3957,#131c2f)}
+.item .name{text-align:center;font-weight:700;min-height:23px}.item .kind{text-align:center;font-size:11px;color:var(--sub);margin-bottom:8px}
+.stat{background:#0d1729;border:1px solid #2c3c56;border-radius:6px;padding:5px 7px;margin:4px 0;font-size:12px;display:flex;justify-content:space-between;gap:4px}
+.stat strong{white-space:nowrap;font-size:12px;color:#d8eaff}.perfection{font-size:12px;font-weight:750;text-align:center;margin-top:7px;color:#c9e5ff;background:#263b5c;border:1px solid #47658c;border-radius:7px;padding:5px}.meta{font-size:10px;color:#7787a3;margin-top:9px;word-break:break-all}
+.item{transition:opacity .15s ease,filter .15s ease;border-color:var(--tier,#66758f)}
+.item.dimmed{opacity:.19;filter:grayscale(.8)}
+.art{font-size:21px;font-weight:800;color:#fff;background:var(--tier,#66758f);border-color:var(--tier,#66758f);box-shadow:inset 0 0 0 3px #ffffff18}
+.item[data-kind="egg"] .art{border-radius:50%}
+.item[data-kind="pet"] .art{border-radius:12px;border-width:6px;background:#172237!important;box-shadow:none;color:var(--tier,#66758f)}
+.rarity-0{--tier:#bfc1c5}.rarity-1{--tier:#21b4f4}.rarity-2{--tier:#10e83b}.rarity-3{--tier:#f0ed00}.rarity-4{--tier:#fa2424}.rarity-5{--tier:#a318f5}.rarity-6{--tier:#e71919}.rarity-7{--tier:#0875f8}.rarity-8{--tier:#8cd400}
+.rarity-6 .art{background:repeating-linear-gradient(135deg,#e71919 0 9px,#b40f0f 9px 18px)}.rarity-7 .art{background:repeating-linear-gradient(135deg,#0875f8 0 11px,#0752c7 11px 22px)}.rarity-8 .art{background:repeating-linear-gradient(135deg,#8cd400 0 12px,#b4e929 12px 24px)}
+
+
+textarea{width:100%;min-height:105px;resize:vertical;background:#0c1525;border:1px solid #3c4c65;color:#e6edfc;border-radius:9px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.small{font-size:12px;color:var(--sub)}.hide{display:none!important}.empty{padding:25px;color:var(--sub);text-align:center}
+@media(max-width:550px){main{padding:15px 10px}.cards{grid-template-columns:repeat(5,175px);gap:12px}.hatch-grid{grid-template-columns:repeat(4,175px)}.item{padding:9px}.stat{font-size:11px}.stat strong{font-size:11px}.filters{gap:8px}}
+</style></head><body><main>
+<h1>펫 · 알 보유 정리표</h1>
+<p class="intro muted">보유한 펫은 저장된 능력치를 직접 해독하고, 알은 시드에서 부화 옵션을 예측합니다. 부화 중인 알은 최상단 4칸에 표시하고, 나머지는 등급별로 한 줄 5개 고정 배치합니다. 화면이 좁으면 가로로 스크롤하며, 검색 결과만 강조합니다.</p>
+<section class="panel">
+<div class="topline"><h2>보유 데이터</h2><div><button class="primary" id="loadBtn">데이터 적용</button></div></div>
+<p class="small">전체 추출 데이터를 붙여넣거나, [PET_EGG_COLLECTION] 구간을 붙여넣으세요.</p>
+<details><summary style="cursor:pointer;margin:10px 0;color:#aacaff">추출 HEX 붙여넣기 / 수정</summary>
+<textarea id="raw" spellcheck="false" placeholder="[PET_EGG_COLLECTION]부터 붙여넣기"></textarea>
+</details><p id="message" class="small"></p></section>
+<section class="panel">
+<div class="topline"><h2>원본 위치 유지 · 상세 검색</h2><div class="summary" id="summary"></div></div>
+<div class="filters">
+<div class="field"><label>등급</label><select id="rarity"><option value="all">모든 등급</option></select></div>
+
+
+<div class="field"><label>완성도 최솟값 (%)</label><div style="display:flex;gap:6px;align-items:center"><input id="minPerfect" type="number" min="0" max="100" step="1" value="0" style="min-width:0;width:95px;background:#10192a;color:var(--txt);border:1px solid #394b67;border-radius:8px;padding:9px"><span class="small">% 이상</span></div></div>
+<button id="clearBtn">필터 초기화</button>
+</div>
+<div class="option-filter-head"><strong>능력치 옵션 선택</strong><div class="match-buttons" id="matchButtons" role="group" aria-label="능력치 옵션 AND OR 조건"><button type="button" class="active" data-match="or" aria-pressed="true">OR</button><button type="button" data-match="and" aria-pressed="false">AND</button></div></div>
+<p class="small">AND: 선택한 옵션 중 2개가 같은 펫 또는 알에 함께 있는 경우. 옵션 하나만 선택하면 AND와 OR는 같습니다.</p>
+<div class="stats-picker" id="picker"></div>
+<p class="small">필터는 원본 위치를 바꾸지 않고 일치하는 카드만 강조합니다. 완성도는 각 옵션의 (현재값−최솟값)/(최댓값−최솟값)을 평균한 백분율입니다.</p>
+</section>
+<section id="results"></section>
+<p class="small" style="margin-top:22px">※ 펫과 알 모두 완성도는 각 옵션 보간 비율의 평균으로 계산합니다. 펫의 수치는 저장된 HEX를 32.32 F64 보간값으로 변환합니다. 알의 옵션은 기존 펫/알 소환 테이블의 PCG 로직으로 계산한 예측값이며, 부화 전에는 실제 확정값이 아닙니다. 등급별 색상과 펫(네모)·알(동그라미) 형태로 구분합니다.</p>
+</main>
+<script>
+const DEFAULT_RAW="";
+const STAT_NAMES=['치명타 확률','치명타 피해','블록','체력 재생','생명력 흡수','더블찬스','피해','근접 피해','원거리 피해','공격속도','스킬 피해','스킬 쿨타임','체력'];
+const RANGES=[[1,12],[1,80],[1,5],[1,4],[1,20],[1,20],[1,15],[1,50],[1,15],[1,40],[1,30],[1,7],[1,15]];
+const RARITIES=['일반','희귀','서사','전설','궁극','신화','영웅적인','무한한','영원한'];
+const PET_NAMES=[['닭','개','고양이','달팽이','쥐','거북이'],['고슴도치','곰','타조','거미','전갈'],['참새','검치호','유니콘','호랑이','판다'],['뱀','케르베로스','키츠네'],['토끼','나무','사슴'],['베이비 드래곤','지니','스펙트럴 타이거'],['호버 봇','골렘','아기 백사자'],['일식 가면','별고래','먹물 수사슴'],['프리즘 학','황금 위습','우주 해파리']];
+
+const U64=(1n<<64n)-1n, U32=4294967296, MULT=0x5851f42d4c957f2dn, INIT_INC=0x1a08ee1184ba6d32n, STEP_INC=0x14057b7ef767814fn;
+class PCG{constructor(seed){this.state=(seed*MULT+INIT_INC)&U64}next(){const old=this.state;this.state=(old*MULT+STEP_INC)&U64;const x=Number((((old>>18n)^old)>>27n)&0xffffffffn)>>>0,rot=Number((old>>59n)&31n);return ((x<<((-rot)&31))+(x>>>rot))>>>0}nextInt(max){const x=this.next();return ((x>>>1)&0x7fffffff)%max}nextF64(){return this.next()/U32}}
+const fmt=x=>Number(x).toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+function completion(stats){if(!stats.length)return null;return stats.reduce((sum,s)=>{const [lo,hi]=RANGES[s.id];return sum+(s.value-lo)/(hi-lo)},0)/stats.length*100}
+function decodeStats(line){const body=line.slice(1,21),out=[];for(let i=0;i<20;i+=10){const chunk=body.slice(i,i+10);if(chunk==='0000000000')continue;if(chunk.length!==10||chunk[0]!=='1')continue;const id=parseInt(chunk[1],16),raw=parseInt(chunk.slice(2),16);if(id<0||id>=STAT_NAMES.length)continue;const [lo,hi]=RANGES[id];out.push({id,value:lo+(hi-lo)*raw/U32});}return out}
+function predictEgg(seed,rarity){const p=new PCG(BigInt('0x'+seed));const petRaw=p.next();const list=PET_NAMES[rarity]||[];const petId=list.length?((petRaw>>>1)&0x7fffffff)%list.length:null;for(let i=1;i<5;i++)p.next();const available=STAT_NAMES.map((_,i)=>i),stats=[];for(let i=0;i<2;i++){const j=p.nextInt(available.length),id=available[j];available.splice(j,1);if(id===7||id===8){const opposite=id===7?8:7;const pos=available.indexOf(opposite);if(pos>=0)available.splice(pos,1)}const t=p.nextF64(),[lo,hi]=RANGES[id];stats.push({id,value:lo+(hi-lo)*t});}return {stats,petId,petName:petId===null?"펫 이름 미확인":list[petId]}}
+function parseData(input){const text=input.includes('[PET_EGG_COLLECTION]')?input.split('[PET_EGG_COLLECTION]')[1].split(/\n\[[A-Z_]+\]/)[0]:input;const lines=text.split(/\r?\n/).map(x=>x.trim().toUpperCase()).filter(x=>/^[0-9A-F]{32}$/.test(x));const items=[];for(let i=0;i<lines.length;i++){const h=lines[i],type=h[0],rarity=parseInt(h[1],16);if(rarity<0||rarity>8)continue;if(type==='2'&&i+1<lines.length&&lines[i+1][0]==='8'){const id=parseInt(h.slice(2,4),16),stats=decodeStats(lines[++i]);items.push({type:'pet',rarity,id,name:PET_NAMES[rarity]?.[id]||`펫 ${id}`,stats,level:parseInt(h.slice(4,12),16)+1,exp:parseInt(h.slice(12,20),16),equipped:parseInt(h.slice(20,22),16)>0,locked:parseInt(h.slice(24,26),16)>0,hex:h});}
+else if(type==='3'){const seed=h.slice(6,22),prediction=predictEgg(seed,rarity);items.push({type:'egg',rarity,id:prediction.petId,name:prediction.petName,stats:prediction.stats,seed,equipped:parseInt(h.slice(2,4),16)>0,slot:parseInt(h.slice(4,6),16),hex:h});}}
+return items.map((x,index)=>({...x,index:index+1}));}
+let items=[];
+let renderedCards=[];
+const $=id=>document.getElementById(id);
+let matchMode='or';
+function updateMatchButtons(){for(const button of $('matchButtons').querySelectorAll('button')){const selected=button.dataset.match===matchMode;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}}
+function setup(){const sel=$('rarity');RARITIES.forEach((name,id)=>{const o=document.createElement('option');o.value=id;o.textContent=name;sel.append(o)});$('picker').innerHTML=STAT_NAMES.map((s,i)=>`<label class="pill"><input type="checkbox" value="${i}">${s}</label>`).join('');['rarity','minPerfect'].forEach(id=>$(id).addEventListener('input',render));$('matchButtons').addEventListener('click',event=>{const btn=event.target.closest('button[data-match]');if(!btn)return;matchMode=btn.dataset.match;updateMatchButtons();render()});$('picker').addEventListener('change',render);$('loadBtn').onclick=()=>load($('raw').value);$('clearBtn').onclick=()=>{['rarity'].forEach(id=>$(id).selectedIndex=0);matchMode='or';updateMatchButtons();$('minPerfect').value='0';$('picker').querySelectorAll('input').forEach(x=>x.checked=false);render()};$('raw').value='';$('message').textContent='';render()}
+function load(raw){try{items=parseData(raw);if(!items.length)throw Error('펫 또는 알 데이터를 찾지 못했습니다.');$('message').textContent=`${items.length.toLocaleString()}개 데이터 불러옴 · 펫 ${items.filter(x=>x.type==='pet').length}개 / 알 ${items.filter(x=>x.type==='egg').length}개`;buildCards();render()}catch(e){$('message').textContent='오류: '+e.message}}
+function icon(item){return item.type==='egg'?'알':'펫'}
+function esc(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]))}
+function buildCards(){
+  // 데이터 로딩 시 단 한 번 계산하고, 카드도 단 한 번 생성한다.
+  const hatch=items.filter(x=>x.type==='egg'&&x.equipped).sort((a,b)=>a.slot-b.slot);
+  const ordered=[...items].filter(x=>!(x.type==='egg'&&x.equipped)).sort((a,b)=>b.rarity-a.rarity||a.index-b.index);
+  // 배치는 등급별 연속 5열로 유지하되, 번호는 등급×종류별로 따로 매긴다.
+  // 부화기에 있는 알은 보유 알 번호에서 제외하므로 부화해도 다른 알 번호에 영향을 주지 않는다.
+  const counters=new Map();
+  for(const x of ordered){
+    const key=x.rarity+':'+x.type;
+    const n=(counters.get(key)||0)+1;
+    counters.set(key,n);
+    x.position=n;
+  }
+  for(const x of hatch)x.position=x.slot+1;
+  for(const x of hatch){x.perfection=completion(x.stats);x.statMask=x.stats.reduce((mask,stat)=>mask|(1<<stat.id),0);}
+  for(const x of ordered){
+    x.perfection=completion(x.stats);
+    x.statMask=x.stats.reduce((mask,stat)=>mask|(1<<stat.id),0);
+  }
+  const makeCard=x=>`<article class="item rarity-${x.rarity}" data-kind="${x.type}" data-record="${x.index}"><span class="index">${x.type==='egg'&&x.equipped?'부화기 '+(x.slot+1):(x.type==='pet'?'펫 ':'알 ')+x.position}</span><div class="tags"><span class="tag">${RARITIES[x.rarity]}</span>${x.locked?'<span class="tag">잠금</span>':''}</div><div class="art">${icon(x)}</div><div class="name">${esc(x.name)}</div><div class="kind">${x.type==='pet'?'Lv.'+x.level:''}</div>${x.stats.length?x.stats.map(s=>`<div class="stat"><span>${STAT_NAMES[s.id]}</span><strong>+${fmt(s.value)}%</strong></div>`).join(''):'<div class="stat">저장된 옵션 없음</div>'}<div class="perfection">완성도 ${x.perfection===null?'-':fmt(x.perfection)+'%'}</div></article>`;
+  const hatchHTML=hatch.length?`<section><div class="group-head"><h2>부화 중인 알</h2><span class="muted">부화기 위치 순서 · 4칸 고정</span></div><div class="cards-scroll"><div class="cards hatch-grid">${Array.from({length:4},(_,slot)=>{const x=hatch.find(v=>v.slot===slot);return x?makeCard(x):`<div class="empty-slot">부화기 ${slot+1}<div>비어 있음</div></div>`}).join('')}</div></div></section>`:'';
+  // 등급별로 별도 grid를 만들면 각 등급마다 1열부터 다시 시작하므로 하나의 연속 grid만 사용한다.
+  $('results').innerHTML=items.length?hatchHTML+`<section><div class="group-head"><h2>보유 목록</h2><span class="muted">등급 높은 순 · 한 줄 5개 · 등급/종류별 위치 번호</span></div><div class="cards-scroll"><div class="cards">${ordered.map(makeCard).join('')}</div></div></section>`:'<div class="panel empty">추출 데이터를 입력하면 게임 목록 순서로 표시됩니다.</div>';
+  const nodeMap=new Map([...$('results').querySelectorAll('.item')].map(node=>[Number(node.dataset.record),node]));
+  const shown=[...hatch,...ordered];
+  renderedCards=shown.map(item=>({item,node:nodeMap.get(item.index)})).filter(x=>x.node);
+}
+function render(){
+ const selected=[...$('picker').querySelectorAll('input:checked')].map(x=>+x.value);
+ const rarity=$('rarity').value,match=matchMode,minPerfect=Number($('minPerfect').value)||0;
+ const active=rarity!=='all'||selected.length>0||minPerfect>0;
+ const selectedMask=selected.reduce((mask,id)=>mask|(1<<id),0);
+ const andMode=match==='and';
+ let total=0,petCount=0,eggCount=0;
+ for(const {item,node} of renderedCards){
+   const commonMask=item.statMask&selectedMask;
+   const optionOK=!selected.length||(andMode?selected.length>=2&&(commonMask&(commonMask-1))!==0:commonMask!==0);
+   const ok=(rarity==='all'||item.rarity===+rarity)&&(minPerfect<=0||(item.perfection!==null&&item.perfection+1e-8>=minPerfect))&&optionOK;
+   node.classList.toggle('dimmed',active&&!ok);
+   if(ok){total++;if(item.type==='pet')petCount++;else eggCount++;}
+ }
+ $('summary').innerHTML=`<span class="count">전체 <b>${items.length.toLocaleString()}</b></span><span class="count">일치 <b>${total.toLocaleString()}</b></span><span class="count">펫 <b>${petCount}</b></span><span class="count">알 <b>${eggCount}</b></span>`;
+}
+
+setup();
+</script></body></html>

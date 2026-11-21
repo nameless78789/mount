@@ -63,6 +63,8 @@
       padding: 10px 12px;
     }
     .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .converter-row { display:grid; grid-template-columns:minmax(0,3fr) minmax(140px,1fr); gap:10px; align-items:end; }
+    @media(max-width:520px){.converter-row{grid-template-columns:1fr}}
     .batch-row {
       display: flex;
       gap: 14px;
@@ -111,8 +113,8 @@
     .rarity-Ultimate { color: #ff5d5d; }
     .rarity-Mythic { color: #d55dff; }
     .rarity-Heroic { color: #ff9d5c; }
-    .rarity-Infinite { color: #ff73b8; }
-    .rarity-Eternal { color: #76a9ff; }
+    .rarity-Infinite { color: #59a6ff; }
+    .rarity-Eternal { color: #a8e83a; }
     .warn { color: var(--warn); font-weight: 800; }
     .route-1 { color: #e5e7eb; font-weight: 800; }
     .route-15 { color: #5dd8ff; font-weight: 800; }
@@ -148,6 +150,22 @@
       white-space: nowrap;
     }
     .column-tools input[type="checkbox"] { width: auto; padding: 0; }
+    /* 상세 필터 */
+    .detail-filter { border:1px solid var(--line); border-radius:12px; background:#020617; margin-bottom:12px; }
+    .detail-filter summary { padding:13px 15px; cursor:pointer; font-weight:700; }
+    .detail-filter summary .muted-small { margin-left:8px; font-weight:400; }
+    .filter-content { padding:0 15px 14px; }
+    .filter-top { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    .filter-top label { margin-top:0; }
+    .filter-option-heading { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .filter-mode { display:flex; flex-wrap:wrap; gap:12px; }
+    .filter-mode label, .stat-check-grid label { display:flex; align-items:center; gap:6px; margin:0; font-size:13px; color:var(--text); cursor:pointer; }
+    .filter-mode input, .stat-check-grid input { width:auto; margin:0; padding:0; }
+    .stat-check-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:11px 8px; }
+    .filter-bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; }
+    .filter-bottom button { width:auto; margin-top:0; }
+    @media(max-width:700px) { .stat-check-grid {grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media(max-width:500px) { .filter-top {grid-template-columns:1fr;} }
     .hidden-col { display: none; }
     @media (max-width: 1000px) {
       .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -203,7 +221,7 @@
 
         <details class="converter" style="margin:14px 0;border:1px solid var(--line);border-radius:10px;padding:10px 12px">
           <summary style="cursor:pointer;font-weight:700">최근 [MOUNT] 한 줄 코드 → 기존 Seed / State 변환</summary>
-          <div class="row" style="margin-top:10px">
+          <div class="converter-row" style="margin-top:8px">
             <div><label>최근 [MOUNT] 코드 (32자리 HEX)</label><input id="compactMountData" spellcheck="false" placeholder="[MOUNT] 다음 줄의 HEX32 코드" /></div>
             <div><button type="button" class="secondary" id="convertBtn">변환하여 입력</button></div>
           </div>
@@ -246,6 +264,34 @@
           <button id="searchBtn" type="button" class="secondary">검색</button>
         </div>
       </div>
+        <details class="detail-filter" id="detailFilter">
+          <summary>상세 필터 <span class="muted-small">등급 · 옵션 · 완성도</span></summary>
+          <div class="filter-content">
+            <div class="filter-top">
+              <div>
+                <label for="rarityFilter">등급 (기본 또는 추가)</label>
+                <select id="rarityFilter"><option value="">전체 등급</option></select>
+              </div>
+              <div>
+                <label for="minPerfection">최소 완성도 (%)</label>
+                <input id="minPerfection" type="number" min="0" max="100" step="0.1" placeholder="제한 없음" />
+              </div>
+            </div>
+            <div class="filter-option-heading">
+              <strong>옵션 (복수 선택)</strong>
+              <div class="filter-mode">
+                <label><input type="radio" name="optionMode" value="and" checked /> 2개 조합 (AND)</label>
+                <label><input type="radio" name="optionMode" value="or" /> 하나 이상 (OR)</label>
+              </div>
+            </div>
+            <div class="stat-check-grid" id="statFilterChecks"></div>
+            <p class="muted-small">AND: 선택한 옵션 중 2개가 같은 펫 또는 탈것에 함께 있는 경우. 옵션 하나만 선택하면 AND와 OR는 같습니다.</p>
+            <div class="filter-bottom">
+              <button type="button" class="secondary" id="clearFilters">필터 초기화</button>
+              <span class="muted-small" id="filterCount">조건 변경 시 자동 적용</span>
+            </div>
+          </div>
+        </details>
       <div class="column-tools" id="columnTools">
         <label><input type="checkbox" data-col="1" checked /> 뽑기</label>
         <label><input type="checkbox" data-col="2" checked /> 현재 Seed</label>
@@ -378,16 +424,18 @@
       const seedHex = document.getElementById('seedInput').value.trim().replace(/^0x/i, '');
       const stateHex = document.getElementById('stateInput').value.trim().replace(/^0x/i, '');
       if (!/^[0-9a-fA-F]{16}$/.test(seedHex)) throw new Error('Seed는 16자리 HEX여야 합니다.');
-      if (!/^[0-9a-fA-F]{16}$/.test(stateHex)) throw new Error('State는 16자리 HEX여야 합니다.');
+      if (!/^[0-9a-fA-F]{1,16}$/.test(stateHex)) throw new Error('State는 1~16자리 HEX여야 합니다.');
+      const paddedState = stateHex.toUpperCase().padStart(16, '0');
+      document.getElementById('stateInput').value = paddedState;
       return {
         seed: BigInt('0x' + seedHex),
-        level: parseInt(stateHex.slice(0, 8), 16),
-        count: parseInt(stateHex.slice(8, 16), 16),
+        level: parseInt(paddedState.slice(0, 8), 16),
+        count: parseInt(paddedState.slice(8, 16), 16),
         ascension: Number(document.getElementById('ascensionInput').value)
       };
     }
 
-    function convertCompactData() {
+    async function convertCompactData() {
       const errorEl = document.getElementById('convertError');
       const resultEl = document.getElementById('convertResult');
       errorEl.textContent = '';
@@ -400,7 +448,16 @@
         document.getElementById('seedInput').value = hex64(data.seed);
         document.getElementById('stateInput').value = formatState(data.level, data.count);
         document.getElementById('ascensionInput').value = String(data.ascension);
-        resultEl.textContent = `변환된 현재 값: Lv.${data.level} / Count ${data.count} (${data.ascension}승천) — 게임 화면의 레벨과 카운트가 일치하는지 확인하세요.`;
+        let countLabel = String(data.count);
+        let configWarning = '';
+        try {
+          const levels = await loadLevels(data.ascension);
+          const required = getRequiredCount(data.level, levels);
+          countLabel = required ? `${data.count}/${required}` : `${data.count}/—`;
+        } catch (configErr) {
+          configWarning = ' (필요 소환 횟수를 확인하려면 MountSummonConfig.json이 필요합니다.)';
+        }
+        resultEl.textContent = `변환된 현재 값: Lv.${data.level + 1} / Count ${countLabel} (${data.ascension}승천) — 게임 화면의 레벨과 카운트가 일치하는지 확인하세요.${configWarning}`;
         resultEl.style.display = 'block';
       } catch (err) { errorEl.textContent = err.message || String(err); }
     }
@@ -410,10 +467,10 @@
         document.getElementById(id).addEventListener('paste', (e) => {
           const text = e.clipboardData?.getData('text') || '';
           const parts = text.trim().split(/\s+/);
-          if (parts.length === 2 && parts.every(x => /^[0-9a-fA-F]{16}$/.test(x))) {
+          if (parts.length === 2 && /^[0-9a-fA-F]{16}$/.test(parts[0]) && /^[0-9a-fA-F]{1,16}$/.test(parts[1])) {
             e.preventDefault();
             document.getElementById('seedInput').value = parts[0].toUpperCase();
-            document.getElementById('stateInput').value = parts[1].toUpperCase();
+            document.getElementById('stateInput').value = parts[1].toUpperCase().padStart(16, '0');
           }
         });
       }
@@ -607,11 +664,11 @@
 
     function rowToSearchText(r, idx) {
       return [
-        idx + 1,
+        r.no,
         `${r.batchSize}뽑`,
         hex64(r.seed),
         `Lv ${r.displayLevel + 1}`,
-        `Count ${r.displayCount}/${r.requiredCount}`,
+        `Count ${r.requiredCount ? `${r.displayCount}/${r.requiredCount}` : `${r.displayCount}/—`}`,
         r.mode === 'normal' ? '기본' : '추가',
         r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
         RARITY_KOR[r.rarity] || r.rarity,
@@ -621,13 +678,57 @@
       ].join(' ').toLowerCase();
     }
 
+    function initializeDetailFilters() {
+      const raritySelect = document.getElementById('rarityFilter');
+      RARITIES.forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = RARITY_KOR[key] || key;
+        raritySelect.appendChild(option);
+      });
+      const statContainer = document.getElementById('statFilterChecks');
+      SUBSTATS_POOL.forEach(key => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = key;
+        cb.addEventListener('change', applySearch);
+        label.append(cb, document.createTextNode(SUBSTAT_KOR[key] || key));
+        statContainer.appendChild(label);
+      });
+      raritySelect.addEventListener('change', applySearch);
+      document.getElementById('minPerfection').addEventListener('input', applySearch);
+      document.querySelectorAll('input[name="optionMode"]').forEach(el => el.addEventListener('change', applySearch));
+      document.getElementById('clearFilters').addEventListener('click', () => {
+        raritySelect.value = '';
+        document.getElementById('minPerfection').value = '';
+        statContainer.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
+        document.querySelector('input[name="optionMode"][value="and"]').checked = true;
+        applySearch();
+      });
+    }
+
     function applySearch() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
-      if (!q) {
-        filteredDetailRows = lastDetailRows;
-      } else {
-        filteredDetailRows = lastDetailRows.filter((r, idx) => rowToSearchText(r, idx).includes(q));
-      }
+      const rarity = document.getElementById('rarityFilter').value;
+      const minimumText = document.getElementById('minPerfection').value.trim();
+      const minimum = minimumText === '' ? null : Number(minimumText);
+      const selectedStats = [...document.querySelectorAll('#statFilterChecks input:checked')].map(el => el.value);
+      const mode = document.querySelector('input[name="optionMode"]:checked').value;
+
+      filteredDetailRows = lastDetailRows.filter((r, idx) => {
+        if (q && !rowToSearchText(r, idx).includes(q)) return false;
+        if (rarity && r.rarity !== rarity) return false;
+        if (minimum !== null && (!Number.isFinite(minimum) || r.perfection < minimum)) return false;
+        if (selectedStats.length) {
+          const names = new Set(r.stats.map(stat => stat.name));
+          const matched = selectedStats.filter(name => names.has(name)).length;
+          if (mode === 'and' && matched < Math.min(2, selectedStats.length)) return false;
+          if (mode === 'or' && matched < 1) return false;
+        }
+        return true;
+      });
+      document.getElementById('filterCount').textContent = `전체 ${lastDetailRows.length.toLocaleString()}건 중 ${filteredDetailRows.length.toLocaleString()}건 표시`;
       renderDetailRows(filteredDetailRows);
     }
 
@@ -775,7 +876,7 @@
         <div class="mini"><div class="k">기본 자원</div><div class="v">${resourceCount}개</div></div>
         <div class="mini"><div class="k">최대 보너스</div><div class="v"><span class="bonus">${best.bonus}개</span></div></div>
         <div class="mini"><div class="k">총 실제 소환</div><div class="v">${best.consumed}개</div></div>
-        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1} / ${best.finalCount}</div></div>
+        <div class="mini"><div class="k">최종 Level/Count</div><div class="v">Lv ${best.finalLevel + 1} / Count ${getRequiredCount(best.finalLevel, levels) ? `${best.finalCount}/${getRequiredCount(best.finalLevel, levels)}` : `${best.finalCount}/—`}</div></div>
         <div class="mini"><div class="k">종료 데이터</div>${endData ? `<div class="code" style="overflow-wrap:anywhere;white-space:pre-line">${endData}</div><button type="button" class="secondary" id="copyEndData">종료 데이터 복사</button>` : `<div class="muted-small">종료 데이터 생성 불가</div>`}</div>
         <div class="mini"><div class="k">승천 후 데이터</div>${ascendedData ? `<div class="code" style="overflow-wrap:anywhere;white-space:pre-line">${ascendedData}</div><button type="button" class="secondary" id="copyAscendedData">승천 후 데이터 복사</button>` : `<div class="muted-small">${ascensionLevel >= 3 ? '최대 승천 단계 도달 (3승천)' : 'Lv.100 도달 후 승천 가능'}</div>`}</div>
       `;
@@ -792,6 +893,7 @@
       document.getElementById('routeText').innerHTML = `최적 루트: <span class="warn">${compactRoute(best.route)}</span> / 탐색 상태 수: ${stateCount}`;
 
       lastDetailRows = buildDetailRows(best, initialSeed, startLevel, startCount, levels, extraChancePct, ascended);
+      lastDetailRows.forEach((r, idx) => { r.no = idx + 1; });
       filteredDetailRows = lastDetailRows;
       renderDetailRows(filteredDetailRows);
     }
@@ -799,9 +901,9 @@
     function renderDetailRows(rows) {
       document.getElementById('detailBody').innerHTML = rows.map((r, idx) => `
         <tr>
-          <td>${idx + 1}</td>
+          <td>${r.no}</td>
           <td class="code">${hex64(r.seed)}</td>
-          <td>Lv ${r.displayLevel + 1}<br>Count ${r.displayCount}/${r.requiredCount}</td>
+          <td>Lv ${r.displayLevel + 1}<br>Count ${r.requiredCount ? `${r.displayCount}/${r.requiredCount}` : `${r.displayCount}/—`}</td>
           <td>${r.batchSize}뽑</td>
           <td>${r.mode === 'normal' ? '기본' : '<span class="bonus">추가</span>'}</td>
           <td>${r.mode === 'normal' ? (r.bonusTriggered ? '<span class="bonus">발동</span>' : '-') : '체크 생략'}</td>
@@ -843,13 +945,13 @@
       }
       const headers = ['번호', '현재 Seed', '현재 Level', '현재 Count', '뽑기', '구분', '보너스 판정', '등급', '탈것명', '능력치', '완성도'];
       const lines = [headers.map(csvEscape).join(',')];
-      const exportRows = filteredDetailRows.length ? filteredDetailRows : lastDetailRows;
+      const exportRows = filteredDetailRows;
       exportRows.forEach((r, idx) => {
         const values = [
-          idx + 1,
+          r.no,
           hex64(r.seed),
           `Lv ${r.displayLevel + 1}`,
-          `Count ${r.displayCount}/${r.requiredCount}`,
+          `Count ${r.requiredCount ? `${r.displayCount}/${r.requiredCount}` : `${r.displayCount}/—`}`,
           `${r.batchSize}뽑`,
           r.mode === 'normal' ? '기본' : '추가',
           r.mode === 'normal' ? (r.bonusTriggered ? '발동' : '-') : '체크 생략',
@@ -880,6 +982,7 @@
     installTwoLinePasteSplit();
     
     document.getElementById('csvBtn').addEventListener('click', downloadBestCsv);
+    initializeDetailFilters();
     document.getElementById('searchBtn').addEventListener('click', applySearch);
     document.getElementById('searchInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') applySearch();

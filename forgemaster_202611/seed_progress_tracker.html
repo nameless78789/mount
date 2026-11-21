@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시드 변화 역산 계산기</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--card2:#020617;--text:#e5e7eb;--muted:#9ca3af;--line:#374151;--accent:#2563eb;--accent2:#1d4ed8;--danger:#f87171;--ok:#34d399;--warn:#fbbf24;--radius:18px;}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5}.wrap{max-width:980px;margin:0 auto;padding:28px 16px 56px}h1{margin:0 0 8px;font-size:28px;letter-spacing:-.04em}.desc{margin:0 0 20px;color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}h2{margin:0 0 16px;font-size:18px}.type-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px}.type-tabs button{height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--muted);font-weight:900;cursor:pointer}.type-tabs button.active{background:var(--accent);border-color:var(--accent);color:white}.type-tabs button:disabled{opacity:.48;cursor:not-allowed}.field{margin-bottom:14px}label{display:block;margin-bottom:6px;font-size:13px;font-weight:800;color:#cbd5e1}input,select{width:100%;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:0 13px;font-size:16px;outline:none}input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.25)}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:12px;color:var(--muted);margin-top:6px}.warning{color:var(--warn)}.error{display:none;margin-top:12px;color:var(--danger);font-weight:900}.result{display:grid;gap:10px}.box{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:14px}.name{font-size:12px;color:var(--muted);font-weight:900;margin-bottom:6px}.value{font-size:22px;font-weight:950;word-break:break-all}.value.small{font-size:18px}.ok{color:var(--ok)}.btn{width:100%;height:48px;border:0;border-radius:15px;background:linear-gradient(135deg,var(--accent),#4f46e5);color:white;font-size:15px;font-weight:950;cursor:pointer;margin-top:6px}@media(max-width:800px){.grid{grid-template-columns:1fr}.wrap{padding-top:22px}h1{font-size:24px}.value{font-size:20px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>시드 변화 역산 계산기</h1>
+    <p class="desc">과거 Seed와 Level/Count State를 기준으로 현재 게임 화면의 Level, Count까지 진행한 소환 수와 현재 Seed를 계산합니다.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>입력</h2>
+        <div class="type-tabs">
+          <button id="eggBtn" class="active" onclick="setType('egg')">펫 / 알</button>
+          <button id="mountBtn" onclick="setType('mount')">탈것</button>
+          <button id="skillBtn" type="button" disabled title="스킬 데이터 업데이트 정보가 없어 사용할 수 없습니다.">스킬 (사용 불가)</button>
+        </div>
+
+        <div class="field">
+          <label for="ascension">승천 단계</label>
+          <select id="ascension">
+            <option value="0">0승천</option><option value="1">1승천</option>
+            <option value="2">2승천</option><option value="3">3승천 (최대 Lv.150)</option>
+          </select>
+          <div class="hint">과거 상태와 현재 상태를 같은 승천 단계 기준으로 계산합니다. 1줄 [PET]/[MOUNT] 코드를 붙여넣으면 승천 단계도 자동으로 선택됩니다.</div>
+        </div>
+
+        <div class="hint" style="margin:16px 0 12px;font-weight:800;color:#cbd5e1;">두 줄 코드 입력 (기본 · 권장)</div>
+        <div class="field">
+          <label for="oldSeed">과거 상태 Seed (HEX16)</label>
+          <input id="oldSeed" placeholder="HEX16 입력" spellcheck="false" autocomplete="off" onpaste="handleSeedPaste(event)">
+        </div>
+
+        <div class="field">
+          <label for="oldStateHex">과거 Level/Count State (HEX16)</label>
+          <input id="oldStateHex" placeholder="HEX16 입력" spellcheck="false" autocomplete="off">
+          <div class="hint" style="line-height:1.5;">두 줄 코드를 위 Seed칸에 한 번에 붙여넣으면 Seed와 State가 자동으로 분리됩니다.</div>
+          <div id="pasteNotice" class="hint warning" style="display:none;"></div>
+        </div>
+
+        <div class="field" style="margin-top:18px;padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(2,6,23,.45);">
+          <label for="compactInput">한 줄 코드 입력 (대체 입력 방식)</label>
+          <input id="compactInput" placeholder="32자리 HEX 또는 [PET]/[MOUNT] 코드 붙여넣기" spellcheck="false" autocomplete="off" oninput="handleCompactInput()">
+          <div class="hint">한 줄 코드를 입력하면 위 Seed / State 및 승천 단계가 자동으로 설정됩니다.</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="newLevel">현재 게임 화면 Level</label>
+            <input id="newLevel" type="number" placeholder="Level 입력" min="1" max="150" step="1">
+          </div>
+          <div class="field">
+            <label for="newCount">현재 게임 화면 Count</label>
+            <input id="newCount" type="number" placeholder="Count 입력" min="0" step="1">
+          </div>
+        </div>
+
+        <button class="btn" onclick="calculate()">계산하기</button>
+        <div id="error" class="error"></div>
+      </section>
+
+      <section class="card">
+        <h2>결과</h2>
+        <div class="result">
+          <div class="box"><div class="name">과거 Level / Count</div><div id="oldDisplay" class="value">-</div></div>
+          <div class="box"><div class="name">현재 Level / Count</div><div id="newDisplay" class="value">-</div></div>
+          <div class="box"><div class="name">증가량</div><div id="increase" class="value ok">-</div></div>
+          <div class="box"><div class="name">현재 Seed</div><div id="currentSeed" class="value">-</div></div>
+          <div class="box"><div class="name">현재 Level/Count State (HEX16)</div><div id="currentState" class="value small">-</div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const U64_MASK = (1n << 64n) - 1n;
+    let summonType = 'egg';
+    const levelsCache = new Map();
+    const $ = function(id){ return document.getElementById(id); };
+
+    function handleCompactInput(){
+      const value = $('compactInput').value.trim();
+      if(!value) return;
+      const compact = parseCompactData(value);
+      if(!compact) return;
+      applyCompactData(compact);
+    }
+
+    function applyCompactData(compact){
+      if(!Number.isInteger(compact.ascension) || compact.ascension < 0 || compact.ascension > 3){
+        $('error').textContent = '한 줄 코드에서 승천 단계를 확인할 수 없습니다.';
+        $('error').style.display = 'block';
+        return;
+      }
+      const maxLevel = compact.ascension === 3 ? 150 : 100;
+      if(compact.level >= maxLevel){
+        $('error').textContent = `한 줄 코드의 레벨 값이 선택된 승천 단계의 최대 레벨(${maxLevel})을 벗어났습니다.`;
+        $('error').style.display = 'block';
+        return;
+      }
+      $('error').style.display = 'none';
+      setType(compact.type, false);
+      $('oldSeed').value = compact.seed;
+      $('oldStateHex').value = makeStateHex(compact.level + 1, compact.count);
+      $('ascension').value = String(compact.ascension);
+      const notice = $('pasteNotice');
+      notice.style.display = 'block';
+      notice.textContent = compact.level + 1 >= 126
+        ? `한 줄 코드에서 Seed / State를 변환했습니다. Lv.${compact.level + 1}은 Count가 1바이트를 초과해 잘렸을 수 있으므로 게임 화면과 대조하세요.`
+        : '한 줄 코드에서 Seed / State를 변환했습니다. 과거 상태의 레벨과 카운트를 확인하세요.';
+      calculateIfReady();
+    }
+
+    function handleSeedPaste(event){
+      const text = (event.clipboardData || window.clipboardData).getData('text');
+      const compact = parseCompactData(text);
+      if(compact){
+        event.preventDefault();
+        $('compactInput').value = text.trim();
+        applyCompactData(compact);
+        return;
+      }
+
+      const lines = text.trim().split(/\r?\n/).map(line => line.trim());
+      const hexes = lines.length === 2 && lines.every(line => /^(?:0x)?[0-9a-fA-F]{1,16}$/i.test(line))
+        ? lines.map(line => line.replace(/^0x/i, '').toUpperCase()) : null;
+      if(hexes){
+        event.preventDefault();
+        $('oldSeed').value = hexes[0].toUpperCase();
+        $('oldStateHex').value = hexes[1].toUpperCase();
+        $('pasteNotice').style.display = 'none';
+        calculateIfReady();
+      }
+    }
+
+    function setType(type, recalculate = true){
+      summonType = type;
+      $('eggBtn').classList.toggle('active', type === 'egg');
+      $('mountBtn').classList.toggle('active', type === 'mount');
+      if(recalculate) calculateIfReady();
+    }
+
+    function configFileName(){ return summonType === 'mount' ? 'MountSummonConfig.json' : 'EggSummonConfig.json'; }
+    function typeLabel(){ return summonType === 'mount' ? '탈것' : '펫/알'; }
+
+    async function loadLevels(ascension){
+      const file = configFileName();
+      const cacheKey = file + ':' + ascension;
+      if(levelsCache.has(cacheKey)) return levelsCache.get(cacheKey);
+      const resp = await fetch('./' + file);
+      if(!resp.ok) throw new Error(file + ' 로드 실패. HTML과 같은 폴더에 ' + file + '을 두세요.');
+      const config = await resp.json();
+      let levels;
+      const baseLevels = config.Ascensions && config.Ascensions[0] && config.Ascensions[0].Levels;
+      const extraLevels = config.Ascensions && config.Ascensions[3] && config.Ascensions[3].Levels;
+      if(Array.isArray(baseLevels)){
+        if(ascension === 3){
+          if(!Array.isArray(extraLevels) || baseLevels.length !== 100 || extraLevels.length !== 50){
+            throw new Error(file + '에 3승천 Lv.101~150 데이터가 없습니다. 최신 소환 설정 파일이 필요합니다.');
+          }
+          levels = baseLevels.concat(extraLevels);
+        }else{
+          levels = baseLevels;
+        }
+      }else if(Array.isArray(config.Levels) && config.Levels.length){
+        levels = config.Levels;
+      }else{
+        throw new Error(file + '의 Levels 또는 Ascensions[0].Levels 배열을 찾을 수 없습니다.');
+      }
+      levelsCache.set(cacheKey, levels);
+      return levels;
+    }
+
+    function parseCompactData(text){
+      const raw = String(text || '').trim();
+      const tagged = raw.match(/^\[(PET|MOUNT)\]\s*([0-9a-fA-F]{32})$/i);
+      const bare = !tagged && raw.match(/^([0-9a-fA-F]{32})$/);
+      if(!tagged && !bare) return null;
+      // 태그가 없는 32자리 코드는 현재 선택된 탭을 기준으로 해석합니다.
+      const type = tagged ? (tagged[1].toUpperCase() === 'MOUNT' ? 'mount' : 'egg') : summonType;
+      const hex = (tagged ? tagged[2] : bare[1]).toUpperCase();
+      const ascensionIndex = type === 'egg' ? 30 : 31;
+      return {
+        type,
+        level: parseInt(hex.slice(0, 2), 16),
+        count: parseInt(hex.slice(2, 4), 16),
+        seed: hex.slice(4, 20),
+        ascension: parseInt(hex.charAt(ascensionIndex), 16)
+      };
+    }
+
+    function cleanHex(value, label){
+      const s = String(value || '').trim().replace(/^0x/i, '').toUpperCase();
+      if(!s || s.length > 16) throw new Error(label + '은 1~16자리 HEX 값이어야 합니다.');
+      for(const ch of s){ if(!'0123456789ABCDEF'.includes(ch)) throw new Error(label + '은 0~9, A~F만 입력할 수 있습니다.'); }
+      return s;
+    }
+
+    function parseHex(value, label){ return BigInt('0x' + cleanHex(value, label)); }
+    function hex64(n){ return (n & U64_MASK).toString(16).toUpperCase().padStart(16, '0'); }
+    function hex32(n){ return Number(n).toString(16).toUpperCase().padStart(8, '0'); }
+
+    function readInt(id, label){
+      const n = Number($(id).value);
+      if(!Number.isFinite(n) || !Number.isInteger(n)) throw new Error(label + '은 정수로 입력하세요.');
+      return n;
+    }
+
+    function getRequired(levels, internalLevel){
+      const displayLevel = internalLevel + 1;
+      const idx = Math.min(Math.max(displayLevel, 0), levels.length - 1);
+      const row = levels[idx];
+      const required = Number(row && row.SummonsRequired || 0);
+      if(!Number.isFinite(required) || required < 1) throw new Error('Lv ' + displayLevel + '의 SummonsRequired 값이 올바르지 않습니다.');
+      return required;
+    }
+
+    function parseStateHex(hex){
+      const v = parseHex(hex, 'Level/Count State');
+      const level = Number((v >> 32n) & 0xFFFFFFFFn);
+      const count = Number(v & 0xFFFFFFFFn);
+      return { level, count };
+    }
+
+    function makeStateHex(displayLevel, displayCount){
+      const internalLevel = displayLevel - 1;
+      return hex32(internalLevel) + hex32(displayCount);
+    }
+
+    function validateGameState(name, displayLevel, displayCount, levels){
+      if(displayLevel < 1 || displayLevel > levels.length) throw new Error(name + ' Level은 1~' + levels.length + ' 범위여야 합니다.');
+      if(displayCount < 0) throw new Error(name + ' Count는 0 이상이어야 합니다.');
+      const internalLevel = displayLevel - 1;
+      const required = getRequired(levels, internalLevel);
+      if(displayCount >= required) throw new Error(name + ' Count는 0~' + (required - 1) + ' 범위여야 합니다. ' + required + '/' + required + ' 상태는 다음 레벨 0/' + getRequired(levels, internalLevel + 1) + '로 넘어간 뒤입니다.');
+      return { level: internalLevel, count: displayCount, required };
+    }
+
+    function distance(oldState, newState, levels){
+      if(newState.level < oldState.level || (newState.level === oldState.level && newState.count < oldState.count)) throw new Error('현재 상태가 과거 상태보다 앞에 있습니다.');
+      let level = oldState.level;
+      let count = oldState.count;
+      let total = 0n;
+      while(level < newState.level){
+        const required = getRequired(levels, level);
+        total += BigInt(required - count);
+        level += 1;
+        count = 0;
+      }
+      total += BigInt(newState.count - count);
+      return total;
+    }
+
+    async function calculate(){
+      $('error').style.display = 'none';
+      $('error').textContent = '';
+      try{
+        const ascension = Number($('ascension').value);
+        const levels = await loadLevels(ascension);
+        const oldSeed = parseHex($('oldSeed').value, 'Seed');
+        const oldRaw = parseStateHex($('oldStateHex').value);
+        const oldDisplayLevel = oldRaw.level + 1;
+        const oldDisplayCount = oldRaw.count;
+        const newDisplayLevel = readInt('newLevel', '현재 Level');
+        const newDisplayCount = readInt('newCount', '현재 Count');
+
+        const oldState = validateGameState('과거 상태', oldDisplayLevel, oldDisplayCount, levels);
+        const newState = validateGameState('현재 상태', newDisplayLevel, newDisplayCount, levels);
+        const inc = distance(oldState, newState, levels);
+        const currentSeed = oldSeed + inc;
+        const currentStateHex = makeStateHex(newDisplayLevel, newDisplayCount);
+
+        $('oldDisplay').textContent = 'Lv ' + oldDisplayLevel + ' / ' + oldDisplayCount + '/' + oldState.required;
+        $('newDisplay').textContent = 'Lv ' + newDisplayLevel + ' / ' + newDisplayCount + '/' + newState.required;
+        $('increase').textContent = inc.toString() + '회';
+        $('currentSeed').textContent = hex64(currentSeed);
+        $('currentState').textContent = currentStateHex;
+      }catch(e){
+        $('error').textContent = e.message;
+        $('error').style.display = 'block';
+      }
+    }
+
+    function calculateIfReady(){
+      if($('newLevel').value !== '' && $('newCount').value !== '') calculate();
+    }
+
+    document.querySelectorAll('input:not(#compactInput)').forEach(function(el){ el.addEventListener('input', calculate); });
+    $('ascension').addEventListener('change', calculateIfReady);
+  </script>
+</body>
+</html>

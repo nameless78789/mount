@@ -58,6 +58,8 @@
       border: 1px solid var(--line);
     }
     .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .converter-row { display:grid; grid-template-columns:minmax(0,3fr) minmax(140px,1fr); gap:10px; align-items:end; }
+    @media(max-width:520px){.converter-row{grid-template-columns:1fr}}
     @media(max-width:900px){.row{grid-template-columns:1fr 1fr !important}}
     @media(max-width:520px){.row{grid-template-columns:1fr !important}}
     .action-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -89,8 +91,8 @@
     .rarity-Ultimate { color: #ff5d5d; }
     .rarity-Mythic { color: #d55dff; }
     .rarity-Heroic { color: #ff9d5c; }
-    .rarity-Infinite { color: #ff73b8; }
-    .rarity-Eternal { color: #76a9ff; }
+    .rarity-Infinite { color: #59a6ff; }
+    .rarity-Eternal { color: #a8e83a; }
     .bonus { color: var(--ok); font-weight: 800; }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .muted-small { color: var(--muted); font-size: 12px; }
@@ -122,6 +124,23 @@
       white-space: nowrap;
     }
     .column-tools input[type="checkbox"] { width: auto; padding: 0; }
+
+    /* 상세 필터: 기존 소환/표시 로직과 독립 */
+    .detail-filter { border:1px solid var(--line); border-radius:12px; background:#020617; margin-bottom:12px; }
+    .detail-filter summary { padding:13px 15px; cursor:pointer; font-weight:700; }
+    .detail-filter summary .muted-small { margin-left:8px; font-weight:400; }
+    .filter-content { padding:0 15px 14px; }
+    .filter-top { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    .filter-top label { margin-top:0; }
+    .filter-option-heading { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .filter-mode { display:flex; flex-wrap:wrap; gap:12px; }
+    .filter-mode label, .stat-check-grid label { display:flex; align-items:center; gap:6px; margin:0; font-size:13px; color:var(--text); cursor:pointer; }
+    .filter-mode input, .stat-check-grid input { width:auto; margin:0; padding:0; }
+    .stat-check-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:11px 8px; }
+    .filter-bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; }
+    .filter-bottom button { width:auto; margin-top:0; }
+    @media(max-width:700px) { .stat-check-grid {grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media(max-width:500px) { .filter-top {grid-template-columns:1fr;} }
     .hidden-col { display: none; }
     @media (max-width: 1000px) {
       .row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
@@ -146,25 +165,26 @@
     <h1>알 소환 비교 테이블</h1>
     <div class="desc">
 기본 소환과 보너스 소환을 함께 비교하는 테이블입니다. 같은 Seed에서 기본 소환 등급과 보너스 소환 등급을 한 줄에 함께 표시합니다. 패치 후 기준으로 스탯은 기본/보너스 소환일 때 동일하며, RNG1 기준으로 계산한 펫 이름도 함께 표시합니다.
-<p class="notice">※ 최신 EggSummonConfig.json과 PetLibrary.json을 HTML과 같은 폴더에 두고 실행하세요. 기존 Seed / State 두 줄 형식으로 입력하세요. 최근 [PET] 32자리 코드는 아래 변환 기능을 이용할 수 있습니다. 0~2승천은 Lv.100까지, 3승천은 Lv.150까지 지원합니다.</p>
+<p class="notice">※ 최신 EggSummonConfig.json을 HTML과 같은 폴더에 두고 실행하세요. 기존 Seed / State 두 줄 형식으로 입력하세요. 최근 [PET] 32자리 코드는 아래 변환 기능을 이용할 수 있습니다. 0~2승천은 Lv.100까지, 3승천은 Lv.150까지 지원합니다.</p>
 </div>
 
     <div class="grid">
       <section class="card">
         <div class="row" style="grid-template-columns: 1.5fr 1.5fr 0.8fr 1fr 1fr;">
-          <div><label>Seed (HEX16)</label><input id="seedInput" spellcheck="false" maxlength="16" placeholder="C90450325C3BFD24" /></div>
-          <div><label>State (HEX16)</label><input id="stateInput" spellcheck="false" maxlength="16" placeholder="0000006300000000" /></div>
+          <div><label>Seed(씨드) (HEX16)</label><input id="seedInput" spellcheck="false" maxlength="16" placeholder="C90450325C3BFD24" /></div>
+          <div><label>State(스테이트), 레벨/카운트 (HEX16)</label><input id="stateInput" spellcheck="false" maxlength="16" placeholder="0000006300000000" /></div>
           <div><label>승천 단계</label><select id="ascensionInput"><option value="0">0승천</option><option value="1">1승천</option><option value="2">2승천</option><option value="3">3승천</option></select></div>
-          <div><label>Extra Summon Chance (%)</label><input id="extraChance" type="number" min="0" max="100" step="2" value="0" /></div>
+          <div><label>추가뽑기 확률 (%)</label><input id="extraChance" type="number" min="0" max="100" step="2" value="0" /></div>
           <div><label>비교할 Seed 개수</label><input id="scanCount" type="number" min="1" max="2000" step="1" value="50" /></div>
         </div>
         <details class="converter" style="margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:10px 12px">
           <summary style="cursor:pointer;font-weight:700">최근 [PET] 한 줄 코드 → 기존 Seed / State 변환</summary>
-          <div class="row" style="grid-template-columns:3fr 1fr;align-items:end;margin-top:8px">
+          <div class="converter-row" style="margin-top:8px">
             <div><label>최근 [PET] 코드 (32자리 HEX)</label><input id="compactPetData" spellcheck="false" placeholder="6300C90450325C3BFD24040000000020" /></div>
             <div><button type="button" class="secondary" id="convertBtn">변환하여 입력</button></div>
           </div>
           <div class="hint" style="color:#fbbf24">⚠ 최근 Lua는 Level / Count를 각각 1바이트(0~255)만 출력합니다. <strong>Lv.126 이상은 카운트가 255를 초과할 수 있어 변환을 지원하지 않습니다.</strong> Lv.125 이하에서도 변환된 레벨과 카운트가 실제 게임 화면에 표시되는 값과 정확히 일치하는지 확인한 후 시뮬레이션을 실행하세요. 일치하지 않으면 변환 결과를 사용하지 마세요.</div>
+          <div id="convertResult" class="hint" style="display:none;margin-top:8px;font-weight:700" aria-live="polite"></div>
           <div id="convertError" class="error"></div>
         </details>
         <div class="hint">
@@ -193,6 +213,34 @@
             <button id="csvBtn" type="button" class="secondary">CSV 저장</button>
           </div>
         </div>
+        <details class="detail-filter" id="detailFilter">
+          <summary>상세 필터 <span class="muted-small">등급 · 옵션 · 완성도</span></summary>
+          <div class="filter-content">
+            <div class="filter-top">
+              <div>
+                <label for="rarityFilter">등급 (기본 또는 추가)</label>
+                <select id="rarityFilter"><option value="">전체 등급</option></select>
+              </div>
+              <div>
+                <label for="minPerfection">최소 완성도 (%)</label>
+                <input id="minPerfection" type="number" min="0" max="100" step="0.1" placeholder="제한 없음" />
+              </div>
+            </div>
+            <div class="filter-option-heading">
+              <strong>옵션 (복수 선택)</strong>
+              <div class="filter-mode">
+                <label><input type="radio" name="optionMode" value="and" checked /> 2개 조합 (AND)</label>
+                <label><input type="radio" name="optionMode" value="or" /> 하나 이상 (OR)</label>
+              </div>
+            </div>
+            <div class="stat-check-grid" id="statFilterChecks"></div>
+            <p class="muted-small">AND: 선택한 옵션 중 2개가 같은 펫에 함께 있는 경우. 옵션 하나만 선택하면 AND와 OR는 같습니다.</p>
+            <div class="filter-bottom">
+              <button type="button" class="secondary" id="clearFilters">필터 초기화</button>
+              <span class="muted-small" id="filterCount">조건 변경 시 자동 적용</span>
+            </div>
+          </div>
+        </details>
         <div class="column-tools" id="columnTools">
           <label><input type="checkbox" data-col="1" checked /> 소비 Seed</label>
           <label><input type="checkbox" data-col="2" checked /> 현재 Level/Count</label>
@@ -203,8 +251,6 @@
           <label><input type="checkbox" data-col="7" checked /> 보너스 펫</label>
           <label><input type="checkbox" data-col="8" checked /> 스탯</label>
           <label><input type="checkbox" data-col="9" checked /> 완성도</label>
-          <label><input type="checkbox" data-col="10" checked /> 기본 상위 %</label>
-          <label><input type="checkbox" data-col="11" checked /> 보너스 상위 %</label>
         </div>
         <div class="table-wrap" style="overflow:auto; max-height: 720px; border-radius: 12px; border: 1px solid var(--line);">
           <table>
@@ -220,8 +266,6 @@
                 <th>보너스 펫</th>
                 <th>스탯</th>
                 <th>완성도</th>
-                <th>기본 상위 %</th>
-                <th>보너스 상위 %</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -242,16 +286,6 @@
     const RARITIES = ["Common", "Rare", "Epic", "Legendary", "Ultimate", "Mythic", "Heroic", "Infinite", "Eternal"];
     const RARITY_KOR = {
       Common: "일반", Rare: "희귀", Epic: "서사", Legendary: "전설", Ultimate: "궁극", Mythic: "신화", Heroic: "영웅적", Infinite: "무한", Eternal: "영원한"
-    };
-
-    const DEFAULT_PET_IDS = {
-      Common: [0, 1, 2, 3, 4, 5],
-      Rare: [0, 1, 2, 3, 4],
-      Epic: [0, 1, 2, 3, 4],
-      Legendary: [0, 1, 2],
-      Ultimate: [0, 1, 2],
-      Mythic: [0, 1, 2],
-      Heroic: [0, 1, 2], Infinite: [0, 1, 2], Eternal: [0, 1, 2]
     };
 
     const PET_NAMES = {
@@ -364,19 +398,25 @@
     function readTwoLineData() {
       const seedHex = document.getElementById('seedInput').value.trim().replace(/^0x/i, '');
       const stateHex = document.getElementById('stateInput').value.trim().replace(/^0x/i, '');
-      if (!/^[0-9a-fA-F]{16}$/.test(seedHex)) throw new Error('Seed는 16자리 HEX여야 합니다.');
-      if (!/^[0-9a-fA-F]{16}$/.test(stateHex)) throw new Error('State는 16자리 HEX여야 합니다.');
+      if (!/^[0-9a-fA-F]{1,16}$/.test(seedHex)) throw new Error('Seed는 1~16자리 HEX여야 합니다.');
+      if (!/^[0-9a-fA-F]{1,16}$/.test(stateHex)) throw new Error('State는 1~16자리 HEX여야 합니다.');
+      const paddedState = stateHex.toUpperCase().padStart(16, '0');
+      document.getElementById('stateInput').value = paddedState;
+      const state = BigInt('0x' + paddedState);
       return {
         seed: BigInt('0x' + seedHex),
-        level: parseInt(stateHex.slice(0, 8), 16),
-        count: parseInt(stateHex.slice(8, 16), 16),
+        level: Number((state >> 32n) & 0xFFFFFFFFn),
+        count: Number(state & 0xFFFFFFFFn),
         ascension: Number(document.getElementById('ascensionInput').value)
       };
     }
 
-    function convertCompactData() {
+    async function convertCompactData() {
       const errorEl = document.getElementById('convertError');
+      const resultEl = document.getElementById('convertResult');
       errorEl.textContent = '';
+      resultEl.textContent = '';
+      resultEl.style.display = 'none';
       try {
         const data = parsePetData(document.getElementById('compactPetData').value);
         if (data.ascension > 3) throw new Error('승천 단계는 0~3이어야 합니다.');
@@ -384,6 +424,17 @@
         document.getElementById('seedInput').value = hex64(data.seed);
         document.getElementById('stateInput').value = formatState(data.level, data.count);
         document.getElementById('ascensionInput').value = String(data.ascension);
+        let countLabel = String(data.count);
+        let configWarning = '';
+        try {
+          const { levels } = await loadConfigs(data.ascension);
+          const required = getSummonsRequiredForNext(data.level, levels);
+          countLabel = required ? `${data.count}/${required}` : `${data.count}/—`;
+        } catch (configErr) {
+          configWarning = ' (필요 소환 횟수를 확인하려면 EggSummonConfig.json이 필요합니다.)';
+        }
+        resultEl.textContent = `변환된 현재 값: Lv.${data.level + 1} / Count ${countLabel} (${data.ascension}승천) — 게임 화면의 레벨과 카운트가 일치하는지 확인하세요.${configWarning}`;
+        resultEl.style.display = 'block';
       } catch (err) { errorEl.textContent = err.message || String(err); }
     }
 
@@ -412,42 +463,16 @@
       }
       const levels = ascension === 3 ? [...baseLevels, ...extraLevels] : baseLevels;
 
-      const petsByRarity = Object.fromEntries(RARITIES.map(r => [r, []]));
-
-      try {
-        const libResp = await fetch('./PetLibrary.json');
-        if (libResp.ok) {
-          const petLibrary = await libResp.json();
-          const entries = Array.isArray(petLibrary) ? petLibrary.map((v, i) => [String(i), v]) : Object.entries(petLibrary);
-          for (const [key, data] of entries) {
-            const petIdObj = data.PetId || data.PetID || data.EggId || data.EggID || data.Id || data.id || {};
-            const rarity = petIdObj.Rarity || data.Rarity || data.rarity || data.Grade || data.grade;
-            if (petsByRarity[rarity] !== undefined) {
-              const id = Number(petIdObj.Id ?? petIdObj.ID ?? data.PetId?.Id ?? data.PetID?.Id ?? data.EggId?.Id ?? data.EggID?.Id ?? data.Id ?? data.id ?? key);
-              const type = data.Type || data.type || data.PetType || data.petType || '';
-              const typeKor = TYPE_KOR[type] || type;
-              const name = PET_NAMES[rarity]?.[id] || data.Name || data.name || data.DisplayName || data.displayName || data.Title || data.title || `펫 ${id}`;
-              petsByRarity[rarity].push({ key, data, id, type, typeKor, name });
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('PetLibrary.json 로드 실패. 내장 ID 목록을 사용합니다.', e);
-      }
-
-      for (const rarity of RARITIES) {
-        if (petsByRarity[rarity].length <= 0) {
-          petsByRarity[rarity] = DEFAULT_PET_IDS[rarity].map(id => ({
-            key: String(id),
-            data: {},
-            id,
-            type: '',
-            typeKor: '',
-            name: PET_NAMES[rarity]?.[id] || `펫 ${id}`
-          }));
-        }
-        petsByRarity[rarity].sort((a, b) => Number(a.id) - Number(b.id));
-      }
+      const petsByRarity = Object.fromEntries(RARITIES.map(rarity => [
+        rarity,
+        (PET_NAMES[rarity] || []).map((name, id) => ({
+          key: String(id),
+          id,
+          name,
+          type: '',
+          typeKor: ''
+        }))
+      ]));
 
       return { levels, petsByRarity };
     }
@@ -571,9 +596,7 @@
       let nextLevel = level;
       let nextCount = count + 1;
       const required = getSummonsRequiredForNext(level, levels);
-      if (required === 0) {
-        nextCount = count; // 최고 레벨에서는 카운트 고정, 시드만 소비
-      } else if (nextCount >= required) {
+      if (required > 0 && nextCount >= required) {
         nextCount -= required;
         nextLevel += 1;
       }
@@ -585,7 +608,6 @@
         displayCount: count + 1,
         bonusTriggered,
         rarity,
-        topPercent: (U32 - rarityRaw) / U32 * 100,
         petId: selectedPet.id,
         petKey: selectedPet.key,
         petName,
@@ -608,11 +630,11 @@
     }
 
     function stateText(level, count, required) {
-      return `Lv ${level + 1}<br>${required ? `${count}/${required}` : `MAX`}`;
+      return `Lv ${level + 1}<br>${required ? `${count}/${required}` : `${count}/—`}`;
     }
 
     function stateTextPlain(level, count, required) {
-      return `Lv ${level + 1} ${required ? `${count}/${required}` : `MAX`}`;
+      return `Lv ${level + 1} ${required ? `${count}/${required}` : `${count}/—`}`;
     }
 
     async function scan() {
@@ -629,7 +651,7 @@
         let scanCount = Number(document.getElementById('scanCount').value);
 
         if (!Number.isFinite(extraChancePct) || extraChancePct < 0 || extraChancePct > 100) {
-          throw new Error('Extra Summon Chance는 0~100 사이여야 합니다.');
+          throw new Error('추가뽑기 확률은 0~100 사이여야 합니다.');
         }
         if (!Number.isInteger(scanCount) || scanCount < 1) scanCount = 1;
         if (scanCount > 2000) scanCount = 2000;
@@ -688,12 +710,12 @@
       document.getElementById('summary').innerHTML = `
         <div class="mini">
           <div class="k">시작 Level / Count / Seed</div>
-          <div class="v">Lv ${startLevel + 1} ${startCount}/${getSummonsRequiredForNext(startLevel, levels) || 'MAX'}</div>
+          <div class="v">Lv ${startLevel + 1} / Count ${getSummonsRequiredForNext(startLevel, levels) ? `${startCount}/${getSummonsRequiredForNext(startLevel, levels)}` : `${startCount}/—`}</div>
           <div class="code" style="font-size:12px;overflow-wrap:anywhere;margin-top:6px">${hex64(startSeed)}</div>
         </div>
         <div class="mini">
           <div class="k">종료 Level / Count / Seed</div>
-          <div class="v">Lv ${endLevel + 1} ${endCount}/${getSummonsRequiredForNext(endLevel, levels) || 'MAX'}</div>
+          <div class="v">Lv ${endLevel + 1} / Count ${getSummonsRequiredForNext(endLevel, levels) ? `${endCount}/${getSummonsRequiredForNext(endLevel, levels)}` : `${endCount}/—`}</div>
           <div class="code" style="font-size:12px;overflow-wrap:anywhere;margin-top:6px">${hex64(endSeed)}</div>
         </div>
         <div class="mini"><div class="k">비교 Seed</div><div class="v">${rows.length}개</div></div>
@@ -721,7 +743,7 @@
           }).catch(() => window.prompt('승천 후 데이터를 복사하세요.', ascendedData));
         });
       }
-      renderTableRows(filteredRows);
+      applySearch();
     }
 
     function rowToDisplay(r, idx) {
@@ -729,8 +751,8 @@
         no: idx + 1,
         seed: hex64(r.seed),
         level: `Lv ${r.displayLevel + 1}`,
-        count: r.required ? `Count ${r.displayCount}/${r.required}` : 'MAX',
-        statePlain: `Lv ${r.displayLevel + 1} ${r.required ? `${r.displayCount}/${r.required}` : 'MAX'}`,
+        count: r.required ? `Count ${r.displayCount}/${r.required}` : `Count ${r.displayCount}/—`,
+        statePlain: `Lv ${r.displayLevel + 1} ${r.required ? `${r.displayCount}/${r.required}` : `${r.displayCount}/—`}`,
         bonus: r.bonusTriggered ? '발동' : '-',
         normalPet: petDisplayHtml(r.normal.petName, r.normal.petType),
         normalPetPlain: petDisplayPlain(r.normal.petName, r.normal.petType),
@@ -742,15 +764,13 @@
         bonusRarityKey: r.bonus.rarity,
         stats: statText(r.normal.stats),
         statsPlain: statTextPlain(r.normal.stats),
-        perfection: `${r.normal.perfection.toFixed(1)}%`,
-        normalTop: `${r.normal.topPercent.toFixed(4)}%`,
-        bonusTop: `${r.bonus.topPercent.toFixed(4)}%`
+        perfection: `${r.normal.perfection.toFixed(1)}%`
       };
     }
 
     function renderTableRows(rows) {
       document.getElementById('tbody').innerHTML = rows.map((r, idx) => {
-        const d = rowToDisplay(r, idx);
+        const d = rowToDisplay(r, r.no - 1);
         return `
           <tr>
             <td>${d.no}</td>
@@ -763,26 +783,70 @@
             <td>${d.bonusPet}</td>
             <td>${d.stats}</td>
             <td>${d.perfection}</td>
-            <td>${d.normalTop}</td>
-            <td>${d.bonusTop}</td>
           </tr>
         `;
       }).join('');
       applyColumnVisibility();
     }
 
+    function initializeDetailFilters() {
+      const raritySelect = document.getElementById('rarityFilter');
+      RARITIES.forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = RARITY_KOR[key] || key;
+        raritySelect.appendChild(option);
+      });
+      const statContainer = document.getElementById('statFilterChecks');
+      SUBSTATS_POOL.forEach(key => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = key;
+        cb.addEventListener('change', applySearch);
+        label.append(cb, document.createTextNode(SUBSTAT_KOR[key] || key));
+        statContainer.appendChild(label);
+      });
+      raritySelect.addEventListener('change', applySearch);
+      document.getElementById('minPerfection').addEventListener('input', applySearch);
+      document.querySelectorAll('input[name="optionMode"]').forEach(el => el.addEventListener('change', applySearch));
+      document.getElementById('clearFilters').addEventListener('click', () => {
+        raritySelect.value = '';
+        document.getElementById('minPerfection').value = '';
+        statContainer.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
+        document.querySelector('input[name="optionMode"][value="and"]').checked = true;
+        applySearch();
+      });
+    }
+
     function applySearch() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const rarity = document.getElementById('rarityFilter').value;
+      const minimumText = document.getElementById('minPerfection').value.trim();
+      const minimum = minimumText === '' ? null : Number(minimumText);
+      const selectedStats = [...document.querySelectorAll('#statFilterChecks input:checked')].map(el => el.value);
+      const mode = document.querySelector('input[name="optionMode"]:checked').value;
 
-      if (!q) {
-        filteredRows = lastRows;
-      } else {
-        filteredRows = lastRows.filter((r, idx) => {
-          const d = rowToDisplay(r, idx);
-          return Object.values(d).some(v => String(v).replace(/<br>/g, ' ').toLowerCase().includes(q));
+      filteredRows = lastRows.filter(r => {
+        if (q) {
+          const d = rowToDisplay(r, r.no - 1);
+          if (!Object.values(d).some(v => String(v).replace(/<br>/g, ' ').toLowerCase().includes(q))) return false;
+        }
+        // 기본/추가 펫을 별개로 판정하여 서로 다른 펫의 등급과 옵션을 섞지 않음
+        return [r.normal, r.bonus].some(pet => {
+          if (rarity && pet.rarity !== rarity) return false;
+          if (minimum !== null && (!Number.isFinite(minimum) || pet.perfection < minimum)) return false;
+          if (selectedStats.length) {
+            const names = new Set(pet.stats.map(stat => stat.name));
+            const matched = selectedStats.filter(name => names.has(name)).length;
+            if (mode === 'and' && matched < Math.min(2, selectedStats.length)) return false;
+            if (mode === 'or' && matched < 1) return false;
+          }
+          return true;
         });
-      }
-
+      });
+      document.getElementById('filterCount').textContent =
+        `전체 ${lastRows.length.toLocaleString()}건 중 ${filteredRows.length.toLocaleString()}건 표시`;
       renderTableRows(filteredRows);
     }
 
@@ -815,7 +879,7 @@
         return;
       }
 
-      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 등급', '기본 펫', '보너스 등급', '보너스 펫', '스탯', '완성도', '기본 상위 %', '보너스 상위 %'];
+      const allHeaders = ['#', '소비 Seed', '현재 Level', '현재 Count/필요횟수', '보너스판정', '기본 등급', '기본 펫', '보너스 등급', '보너스 펫', '스탯', '완성도'];
       const visibleIndexes = getVisibleColumnIndexes();
       const exportIndexes = [];
       visibleIndexes.forEach(idx => {
@@ -831,8 +895,8 @@
       const lines = [exportIndexes.map(i => csvEscape(allHeaders[i])).join(',')];
 
       exportRows.forEach((r, idx) => {
-        const d = rowToDisplay(r, idx);
-        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalRarity, d.normalPetPlain, d.bonusRarity, d.bonusPetPlain, d.statsPlain, d.perfection, d.normalTop, d.bonusTop];
+        const d = rowToDisplay(r, r.no - 1);
+        const allValues = [d.no, d.seed, d.level, d.count, d.bonus, d.normalRarity, d.normalPetPlain, d.bonusRarity, d.bonusPetPlain, d.statsPlain, d.perfection];
         lines.push(exportIndexes.map(i => csvEscape(allValues[i])).join(','));
       });
 
@@ -848,6 +912,24 @@
       URL.revokeObjectURL(url);
     }
 
+    function installSeedStatePasteSplit() {
+      const seedEl = document.getElementById('seedInput');
+      const stateEl = document.getElementById('stateInput');
+      const handler = (e) => {
+        const text = e.clipboardData?.getData('text') || '';
+        const tokens = text.trim().split(/\s+/);
+        if (tokens.length === 2 && tokens.every(token => /^(?:0x)?[0-9a-fA-F]{1,16}$/i.test(token))) {
+          e.preventDefault();
+          seedEl.value = tokens[0].replace(/^0x/i, '').toUpperCase();
+          stateEl.value = tokens[1].replace(/^0x/i, '').toUpperCase().padStart(16, '0');
+        }
+      };
+      seedEl.addEventListener('paste', handler);
+      stateEl.addEventListener('paste', handler);
+    }
+
+    initializeDetailFilters();
+    installSeedStatePasteSplit();
     document.getElementById('convertBtn').addEventListener('click', convertCompactData);
     document.getElementById('runBtn').addEventListener('click', scan);
     document.getElementById('csvBtn').addEventListener('click', downloadCsv);
